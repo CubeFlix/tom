@@ -81,7 +81,7 @@ void main() {
 
     layer_dense_init(&h1, input_size, h1_size, &input, &h1_output, &a1_d_inputs, &h1_d_inputs);
     layer_dense_init_values(&h1, WI_GLOROT_NORMAL, BI_ZEROS);
-    layer_dense_init_regularization(&h1, 0.0, 0.001, 0.0, 0.001);
+    layer_dense_init_regularization(&h1, 0.01, 0.001, 0.01, 0.001);
     activation_relu_init(&a1, h1_size, &h1_output, &a1_output, &h2_d_inputs, &a1_d_inputs);
     layer_dense_init(&h2, h1_size, h2_size, &a1_output, &h2_output, &a2_d_inputs, &h2_d_inputs);
     layer_dense_init_values(&h2, WI_GLOROT_NORMAL, BI_ZEROS);

@@ -6,7 +6,7 @@ a neural network written in c.
 
 - [ ] binary cross-entropy
 - [x] saving and loading models
-- [ ] dropout
+- [x] dropout
 - [x] regularization
 - [x] iris dataset
 - [ ] spiral dataset

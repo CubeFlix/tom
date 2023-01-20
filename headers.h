@@ -12,3 +12,4 @@
 #include "sgd.h"
 #include "sigmoid.h"
 #include "softmax.h"
+#include "dropout.h"
