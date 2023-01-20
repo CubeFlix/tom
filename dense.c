@@ -142,6 +142,14 @@ int layer_dense_init_values(struct layer_dense *obj, enum weight_initializer wi_
     return 1;
 }
 
+// Initialize regularization.
+void layer_dense_init_regularization(struct layer_dense *obj, double l1_weights, double l2_weights, double l1_biases, double l2_biases) {
+    obj->l1_weights = l1_weights;
+    obj->l2_weights = l2_weights;
+    obj->l1_biases = l1_biases;
+    obj->l2_biases = l2_biases;
+}
+
 // Free the matrices owned by the layer.
 void layer_dense_free(struct layer_dense *obj) {
     matrix_free(&obj->weights);
@@ -198,6 +206,18 @@ void layer_dense_backward(struct layer_dense *obj) {
         }
     }
 
+    // Calculate weight regularization.
+    if (obj->l1_weights) {
+        for (int i = 0; i < obj->d_weights.size; i++) {
+            obj->d_weights.buffer[i] += obj->l1_weights * copysign(1.0, obj->weights.buffer[i]);
+        }
+    }
+    if (obj->l2_weights) {
+        for (int i = 0; i < obj->d_weights.size; i++) {
+            obj->d_weights.buffer[i] += obj->l2_weights * obj->weights.buffer[i] * 2.0;
+        }
+    }
+
     // Calculate d_biases = sum(d_outputs).
     for (int i = 0; i < output_size; i++) {
         // Calculate the sum of the column.
@@ -206,6 +226,18 @@ void layer_dense_backward(struct layer_dense *obj) {
             sum += obj->d_outputs->buffer[j * output_size + i];
         }
         obj->d_biases.buffer[i] = sum;
+    }
+
+    // Calculate bias regularization.
+    if (obj->l1_biases) {
+        for (int i = 0; i < obj->d_biases.size; i++) {
+            obj->d_biases.buffer[i] += obj->l1_biases * copysign(1.0, obj->biases.buffer[i]);
+        }
+    }
+    if (obj->l2_biases) {
+        for (int i = 0; i < obj->d_biases.size; i++) {
+            obj->d_biases.buffer[i] += obj->l2_biases * obj->biases.buffer[i] * 2.0;
+        }
     }
 
     // Calculate d_inputs = d_outputs * W^T.
@@ -224,4 +256,19 @@ void layer_dense_backward(struct layer_dense *obj) {
             obj->d_inputs->buffer[i * input_size + j] = sum;
         }
     }
+}
+
+// Calculate the total regularization loss for the layer.
+double layer_dense_calculate_regularization(struct layer_dense *obj) {
+    double reg_loss = 0.0;
+
+    // Iterate over each weight and bias value.
+    for (int i = 0; i < obj->weights.size; i++) {
+        reg_loss += (fabs(obj->weights.buffer[i]) * obj->l1_weights) + (obj->weights.buffer[i] * obj->weights.buffer[i] * obj->l2_weights);
+    }
+    for (int i = 0; i < obj->biases.size; i++) {
+        reg_loss += (fabs(obj->biases.buffer[i]) * obj->l1_biases) + (obj->biases.buffer[i] * obj->biases.buffer[i] * obj->l2_biases);
+    }
+
+    return reg_loss;
 }

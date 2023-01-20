@@ -81,12 +81,15 @@ void main() {
 
     layer_dense_init(&h1, input_size, h1_size, &input, &h1_output, &a1_d_inputs, &h1_d_inputs);
     layer_dense_init_values(&h1, WI_GLOROT_NORMAL, BI_ZEROS);
+    layer_dense_init_regularization(&h1, 0.0, 0.001, 0.0, 0.001);
     activation_relu_init(&a1, h1_size, &h1_output, &a1_output, &h2_d_inputs, &a1_d_inputs);
     layer_dense_init(&h2, h1_size, h2_size, &a1_output, &h2_output, &a2_d_inputs, &h2_d_inputs);
     layer_dense_init_values(&h2, WI_GLOROT_NORMAL, BI_ZEROS);
+    layer_dense_init_regularization(&h2, 0.0, 0.001, 0.0, 0.001);
     activation_relu_init(&a2, h2_size, &h2_output, &a2_output, &h3_d_inputs, &a2_d_inputs);
     layer_dense_init(&h3, h2_size, h3_size, &a2_output, &h3_output, &l_d_inputs, &h3_d_inputs);
     layer_dense_init_values(&h3, WI_GLOROT_NORMAL, BI_ZEROS);
+    layer_dense_init_regularization(&h3, 0.0, 0.001, 0.0, 0.001);
     loss_mse_init(&l, h3_size, &h3_output, &y, &l_output, &l_d_inputs);
 
     struct optimizer_adam adam_h1, adam_h2, adam_h3;

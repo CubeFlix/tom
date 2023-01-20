@@ -5,10 +5,10 @@ a neural network written in c.
 ## todo
 
 - [ ] binary cross-entropy
-- [ ] saving and loading models
+- [x] saving and loading models
 - [ ] dropout
-- [ ] regularization
-- [ ] iris dataset
+- [x] regularization
+- [x] iris dataset
 - [ ] spiral dataset
 - [ ] mnist numbers dataset
 - [ ] cuda?

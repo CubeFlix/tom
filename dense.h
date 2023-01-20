@@ -20,7 +20,8 @@ extern char *LAST_ERROR;
 // and inputs, they are passed in on initialization as pointers, and are not
 // stored within the layer itself. However, the weights and biases, along with
 // the gradients on the weights and biases, are initialized and fully managed 
-// by the layer.
+// by the layer. The dense layer supports L1 and L2 weight and bias 
+// regularization.
 struct layer_dense {
     // The input and output size.
     int input_size, output_size;
@@ -33,6 +34,9 @@ struct layer_dense {
 
     // Gradients on the outputs, inputs, weights, and biases, respectively.
     struct matrix *d_outputs, *d_inputs, d_weights, d_biases;
+
+    // Regularization values.
+    double l1_weights, l1_biases, l2_weights, l2_biases;
 };
 
 // Dense layer weight initializers. 
@@ -78,6 +82,9 @@ int layer_dense_init(struct layer_dense *obj, int input_size,
 // Initialize the weights and biases.
 int layer_dense_init_values(struct layer_dense *obj, enum weight_initializer wi_type, enum bias_initializer bi_type);
 
+// Initialize regularization.
+void layer_dense_init_regularization(struct layer_dense *obj, double l1_weights, double l2_weights, double l1_biases, double l2_biases);
+
 // Free the matrices owned by the layer.
 void layer_dense_free(struct layer_dense *obj);
 
@@ -86,5 +93,8 @@ void layer_dense_forward(struct layer_dense *obj);
 
 // Perform a backward pass on the layer.
 void layer_dense_backward(struct layer_dense *obj);
+
+// Calculate the total regularization loss for the layer.
+double layer_dense_calculate_regularization(struct layer_dense *obj);
 
 #endif
