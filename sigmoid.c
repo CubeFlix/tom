@@ -55,15 +55,15 @@ int activation_sigmoid_init(struct activation_sigmoid *obj, int input_size,
 // Perform a forward pass on the activation.
 void activation_sigmoid_forward(struct activation_sigmoid *obj) {
     // Iterate over each value.
-    for (int i = 0; i < obj->inputs->size; i++) {
-        obj->outputs->buffer[i] = 1.0 / (1.0 + exp(-obj->outputs->buffer[i]));
+    for (int i = 0; i < obj->input->size; i++) {
+        obj->output->buffer[i] = 1.0 / (1.0 + exp(-obj->output->buffer[i]));
     }
 }
 
 // Perform a backward pass on the activation.
 void activation_sigmoid_backward(struct activation_sigmoid *obj) {
     // Iterate over each value.
-    for (int i = 0; i < obj->inputs->size; i++) {
-        obj->d_inputs->buffer[i] = obj->d_outputs->buffer[i] * obj->outputs->buffer[i] * (1.0 - obj->outputs->buffer[i]);
+    for (int i = 0; i < obj->input->size; i++) {
+        obj->d_inputs->buffer[i] = obj->d_outputs->buffer[i] * obj->output->buffer[i] * (1.0 - obj->output->buffer[i]);
     }
 }
