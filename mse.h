@@ -28,5 +28,5 @@ int loss_mse_init(struct loss_mse *obj, int input_size, struct matrix *input,
 // Perform a forward pass on the loss.
 double loss_mse_forward(struct loss_mse *obj);
 
-// Perform a backward pass on the activation.
+// Perform a backward pass on the loss.
 void loss_mse_backward(struct loss_mse *obj);

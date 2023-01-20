@@ -70,7 +70,7 @@ double loss_mse_forward(struct loss_mse *obj) {
     return sum_samples / (double)obj->input->n_rows;
 }
 
-// Perform a backward pass on the activation.
+// Perform a backward pass on the loss.
 void loss_mse_backward(struct loss_mse *obj) {
     double coff = 2.0 / (double)obj->input_size;
     

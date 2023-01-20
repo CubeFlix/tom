@@ -1,12 +1,15 @@
 // crossentropy.h
-// Categorical cross-entropy loss function.
+// Cross-entropy loss function.
 
 #include "matrix.h"
 
 extern char *LAST_ERROR;
 
-// The categorical cross-entropy loss function.
-struct loss_mse {
+// The cross-entropy loss function. The forward pass is calculated as 
+// -log(sum(y * input)). The backward pass is calculated as (-y / d_output) / 
+// n_samples. The categorical cross-entropy (softmax + cross-entropy) backward
+// pass can also be computed, which places the final gradients into d_inputs.
+struct loss_crossentropy {
     // The input and output size.
     int input_size, output_size;
 
@@ -18,12 +21,15 @@ struct loss_mse {
 };
 
 // Initialize an empty MSE loss object.
-int loss_mse_init(struct loss_mse *obj, int input_size, struct matrix *input,
-                  struct matrix *y, struct matrix *output, 
-                  struct matrix *d_inputs);
+int loss_crossentropy_init(struct loss_crossentropy *obj, int input_size, 
+                           struct matrix *input, struct matrix *y, 
+                           struct matrix *output, struct matrix *d_inputs);
 
 // Perform a forward pass on the loss.
-double loss_mse_forward(struct loss_mse *obj);
+double loss_crossentropy_forward(struct loss_crossentropy *obj);
 
-// Perform a backward pass on the activation.
-void loss_mse_backward(struct loss_mse *obj);
+// Perform a backward pass on the loss.
+void loss_crossentropy_backward(struct loss_crossentropy *obj);
+
+// Perform a backward pass on the loss and the softmax activation.
+void loss_crossentropy_backward_softmax(struct loss_crossentropy *obj);
