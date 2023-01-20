@@ -2,6 +2,7 @@
 // Cross-entropy loss function.
 
 #include <math.h>
+#include <stdio.h>
 
 #include "crossentropy.h"
 #include "matrix.h"
@@ -54,7 +55,7 @@ int loss_crossentropy_init(struct loss_crossentropy *obj, int input_size,
 
 // Perform a forward pass on the loss.
 double loss_crossentropy_forward(struct loss_crossentropy *obj) {
-    double sum, sum_samples;
+    double sum, sum_samples = 0.0;
     
     // Calculate the forward pass, returning the average loss over all samples.
     // Iterate over each sample.
@@ -64,7 +65,7 @@ double loss_crossentropy_forward(struct loss_crossentropy *obj) {
         // Iterate over each input value.
         for (int j = 0; j < obj->input_size; j++) {
             // Clamp the input value.
-            sum += obj->y->buffer[i] * fmin(1.0-1.0e-7, fmax(obj->input->buffer[i], 1.0e-7));
+            sum += obj->y->buffer[i * obj->input->n_cols + j] * fmin(1.0-1.0e-5, fmax(obj->input->buffer[i * obj->input->n_cols + j], 1.0e-5));
         }
         obj->output->buffer[i] = -log(sum);
         sum_samples += obj->output->buffer[i];

@@ -1,4 +1,4 @@
-// test.c
+// sine_test.c
 
 #include <string.h>
 #include <stdio.h>
@@ -41,8 +41,8 @@ void main() {
     int data_size = 200;
     int batch_size = 25;
     int input_size = 1;
-    int h1_size = 64;
-    int h2_size = 64;
+    int h1_size = 16;
+    int h2_size = 16;
     int h3_size = 1;
 
     struct layer_dense h1, h2, h3;
@@ -144,6 +144,20 @@ void main() {
             printf("%f, %f, %f\n", input.buffer[i], y.buffer[i], h3_output.buffer[i]);
         }
     }
+
+    // Save the network.
+    FILE *save_file = fopen("sine_test.dat", "w");
+    if (save_file != NULL) {
+        fwrite(h1.weights.buffer, h1.weights.size * sizeof(double), 1, save_file);
+        fwrite(h1.biases.buffer, h1.biases.size * sizeof(double), 1, save_file);
+        fwrite(h2.weights.buffer, h2.weights.size * sizeof(double), 1, save_file);
+        fwrite(h2.biases.buffer, h2.biases.size * sizeof(double), 1, save_file);
+        fwrite(h3.weights.buffer, h3.weights.size * sizeof(double), 1, save_file);
+        fwrite(h3.biases.buffer, h3.biases.size * sizeof(double), 1, save_file);
+    } else {
+        printf("Failed to save sine_test network.\n");
+    }
+    fclose(save_file);
 
     // Free the network and its matrices.
     layer_dense_free(&h1);
