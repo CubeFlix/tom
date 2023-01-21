@@ -101,6 +101,7 @@ void main() {
     // Train the network.
     double loss;
     for (int epoch = 0; epoch < 1000; epoch++) {
+        loss = 0.0;
         for (int batch = 0; batch < data_size; batch += batch_size) {
             // Load in the batch data.
             memcpy((void*)input.buffer, (void*)&X.buffer[batch], batch_size * sizeof(double));
@@ -112,7 +113,7 @@ void main() {
             layer_dense_forward(&h2);
             activation_relu_forward(&a2);
             layer_dense_forward(&h3);
-            loss = loss_mse_forward(&l);
+            loss += loss_mse_forward(&l);
 
             // Perform a backward pass.
             loss_mse_backward(&l);
@@ -127,7 +128,7 @@ void main() {
             optimizer_adam_update(&adam_h2, epoch);
             optimizer_adam_update(&adam_h3, epoch);
         }
-        // printf("epoch: %d, loss %f\n", epoch, loss);
+        printf("epoch: %d, loss %f\n", epoch, loss / (double)(data_size / batch_size));
     }
 
     // Print the final output.

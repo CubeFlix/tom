@@ -20,7 +20,7 @@ struct loss_crossentropy {
     struct matrix *d_inputs;
 };
 
-// Initialize an empty MSE loss object.
+// Initialize an empty cross-entropy loss object.
 int loss_crossentropy_init(struct loss_crossentropy *obj, int input_size, 
                            struct matrix *input, struct matrix *y, 
                            struct matrix *output, struct matrix *d_inputs);
