@@ -72,7 +72,7 @@ void main() {
 
     // Initialize the network and its matrices.
     int data_size = 60000;
-    int batch_size = 200;
+    int batch_size = 250;
     int input_size = 28 * 28;
     int h1_size = 128;
     int h2_size = 128;
@@ -111,21 +111,21 @@ void main() {
 
     layer_dense_init(&h1, input_size, h1_size, &input, &h1_output, &a1_d_inputs, &h1_d_inputs);
     layer_dense_init_values(&h1, WI_GLOROT_NORMAL, BI_ZEROS);
-    layer_dense_init_regularization(&h1, 0.01, 0.001, 0.01, 0.000);
+    layer_dense_init_regularization(&h1, 0.001, 0.001, 0.00, 0.000);
     activation_relu_init(&a1, h1_size, &h1_output, &a1_output, &h2_d_inputs, &a1_d_inputs);
     layer_dense_init(&h2, h1_size, h2_size, &a1_output, &h2_output, &a2_d_inputs, &h2_d_inputs);
     layer_dense_init_values(&h2, WI_GLOROT_NORMAL, BI_ZEROS);
-    layer_dense_init_regularization(&h2, 0.01, 0.001, 0.01, 0.000);
+    layer_dense_init_regularization(&h2, 0.001, 0.001, 0.0, 0.000);
     activation_relu_init(&a2, h2_size, &h2_output, &a2_output, &h3_d_inputs, &a2_d_inputs);
     layer_dense_init(&h3, h2_size, h3_size, &a2_output, &h3_output, &l_d_inputs, &h3_d_inputs);
     layer_dense_init_values(&h3, WI_GLOROT_NORMAL, BI_ZEROS);
-    layer_dense_init_regularization(&h3, 0.01, 0.001, 0.01, 0.000);
+    layer_dense_init_regularization(&h3, 0.001, 0.001, 0.00, 0.000);
     // Note that the softmax's gradients will not be used in training.
     activation_softmax_init(&a3, h3_size, &h3_output, &a3_output, &l_output, &l_d_inputs);
     loss_crossentropy_init(&l, h3_size, &a3_output, &y, &l_output, &l_d_inputs);
 
     struct optimizer_adam adam_h1, adam_h2, adam_h3;
-    double learning_rate = 0.01;
+    double learning_rate = 0.001;
     optimizer_adam_init(&adam_h1, &h1, learning_rate, 0.9, 0.999, 0, 1.0e-7);
     optimizer_adam_init(&adam_h2, &h2, learning_rate, 0.9, 0.999, 0, 1.0e-7);
     optimizer_adam_init(&adam_h3, &h3, learning_rate, 0.9, 0.999, 0, 1.0e-7);
@@ -164,9 +164,9 @@ void main() {
             optimizer_adam_update(&adam_h2, epoch);
             optimizer_adam_update(&adam_h3, epoch);
 
-            // debug_out_size = sprintf(debug_out, "\rbatch: %d/%d avg loss: %f", batch/batch_size, data_size/batch_size, loss / (double)(batch / batch_size));
-            // printf(debug_out);
-            // fflush(stdout);
+            debug_out_size = sprintf(debug_out, "\rbatch: %d/%d avg loss: %f", batch/batch_size, data_size/batch_size, loss / (double)(batch / batch_size));
+            printf(debug_out);
+            fflush(stdout);
         }
         printf("\n");
         printf("epoch: %d, loss %f\n", epoch, loss / (double)(data_size / batch_size));
@@ -174,7 +174,7 @@ void main() {
 
     // Print the final output.
     double max;
-    int max_index, max_y_index, num_correct;
+    int max_index = 0, max_y_index = 0, num_correct = 0;
     for (int batch = 0; batch < data_size; batch += batch_size) {
         // Load in the batch data.
         memcpy((void*)input.buffer, (void*)&X.buffer[batch_size * input_size], batch_size * input_size * sizeof(double));
@@ -189,15 +189,15 @@ void main() {
         activation_softmax_forward_stable(&a3);
         
         for (int i = 0; i < y.n_rows; i++) {
-            max = 0.0;
+            max = -1.0;
             for (int j = 0; j < y.n_cols; j++) {
-                if (h3_output.buffer[i * h3_size + j] > max) {
-                    max = h3_output.buffer[i * h3_size + j];
+                if (a3_output.buffer[i * h3_size + j] > max) {
+                    max = a3_output.buffer[i * h3_size + j];
                     max_index = j;
                 }
             }
 
-            max = 0.0;
+            max = -1.0;
             for (int j = 0; j < y.n_cols; j++) {
                 if (y.buffer[i * h3_size + j] > max) {
                     max = y.buffer[i * h3_size + j];
