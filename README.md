@@ -9,7 +9,6 @@ a neural network written in c.
 - [x] dropout
 - [x] regularization
 - [x] iris dataset
-- [ ] spiral dataset
-- [ ] mnist numbers dataset
+- [x] mnist numbers dataset
 - [ ] convolution
 - [ ] cuda?
