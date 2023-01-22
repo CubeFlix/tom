@@ -11,4 +11,3 @@ a neural network written in c.
 - [x] iris dataset
 - [x] mnist numbers dataset
 - [ ] convolution
-- [ ] cuda?
