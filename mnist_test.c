@@ -66,6 +66,37 @@ void load_dataset(struct matrix *X, struct matrix *Y) {
     fclose(labels);
 }
 
+void load_validation_dataset(struct matrix *X, struct matrix *Y) {
+    FILE* images = fopen("t10k-images-idx3-ubyte", "r");
+    FILE* labels = fopen("t10k-labels-idx1-ubyte", "r");
+
+    fseek(images, 16, 1);
+    fseek(labels, 8, 1);
+    
+    unsigned char image[28 * 28];
+    unsigned int label;
+
+    for (int current = 0; current < 10000; current++) {
+        fgets(image, 28 * 28, images);
+        label = fgetc(labels);
+        // Load the image into the matrix.
+        for (int i = 0; i < 28*28; i++) {
+            X->buffer[current * 28*28 + i] = (double)(image[i]) / 255.0;
+        }
+
+        // Load the label into the matrix.
+        for (int i = 0; i < 10; i++) {
+            if (i == label) {
+                Y->buffer[current * 10 + i] = 1.0;
+            } else {
+                Y->buffer[current * 10 + i] = 0.0;
+            }
+        }
+    }
+    fclose(images);
+    fclose(labels);
+}
+
 void main() {
     // Initialize RNG.
     random_init();
@@ -125,7 +156,7 @@ void main() {
     loss_crossentropy_init(&l, h3_size, &a3_output, &y, &l_output, &l_d_inputs);
 
     struct optimizer_adam adam_h1, adam_h2, adam_h3;
-    double learning_rate = 0.001;
+    double learning_rate = 0.005;
     optimizer_adam_init(&adam_h1, &h1, learning_rate, 0.9, 0.999, 0, 1.0e-7);
     optimizer_adam_init(&adam_h2, &h2, learning_rate, 0.9, 0.999, 0, 1.0e-7);
     optimizer_adam_init(&adam_h3, &h3, learning_rate, 0.9, 0.999, 0, 1.0e-7);
@@ -173,6 +204,13 @@ void main() {
     }
 
     // Print the final output.
+    data_size = 10000;
+    matrix_free(&X);
+    matrix_free(&Y);
+    matrix_init(&X, data_size, input_size);
+    matrix_init(&Y, data_size, h3_size);
+    load_validation_dataset(&X, &Y);
+    shuffle(X.buffer, Y.buffer, data_size, sizeof(double) * input_size, sizeof(double) * h3_size);
     double max;
     int max_index = 0, max_y_index = 0, num_correct = 0;
     for (int batch = 0; batch < data_size; batch += batch_size) {
@@ -210,7 +248,8 @@ void main() {
             }
         }
     }
-    printf("accuracy: %f", (double)num_correct/60000.0);
+    printf("validation accuracy: %d %d", num_correct, 10000);
+    printf("validation accuracy: %f", (double)num_correct/10000.0);
 
     // Save the network.
     FILE *save_file = fopen("mnist_test.dat", "w");
