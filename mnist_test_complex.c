@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #include "matrix.h"
 #include "dense.h"
@@ -35,19 +36,20 @@ static void shuffle(void *X, void *Y, size_t n, size_t size_x, size_t size_y) {
     }
 }
 
+
 void load_dataset(struct matrix *X, struct matrix *Y) {
-    FILE* images = fopen("train-images-idx3-ubyte", "r");
-    FILE* labels = fopen("train-labels-idx1-ubyte", "r");
+    FILE* images = fopen("train-images-idx3-ubyte", "rb");
+    FILE* labels = fopen("train-labels-idx1-ubyte", "rb");
 
     fseek(images, 16, 1);
     fseek(labels, 8, 1);
     
     unsigned char image[28 * 28];
-    unsigned int label;
+    unsigned char label[1];
 
     for (int current = 0; current < 60000; current++) {
-        fgets(image, 28 * 28, images);
-        label = fgetc(labels);
+        fread((void*)image, 28 * 28, 1, images);
+        fread((void*)label,  1, 1, labels);
         // Load the image into the matrix.
         for (int i = 0; i < 28*28; i++) {
             X->buffer[current * 28*28 + i] = (double)(image[i]) / 255.0;
@@ -55,7 +57,7 @@ void load_dataset(struct matrix *X, struct matrix *Y) {
 
         // Load the label into the matrix.
         for (int i = 0; i < 10; i++) {
-            if (i == label) {
+            if (i == label[0]) {
                 Y->buffer[current * 10 + i] = 1.0;
             } else {
                 Y->buffer[current * 10 + i] = 0.0;
@@ -67,18 +69,18 @@ void load_dataset(struct matrix *X, struct matrix *Y) {
 }
 
 void load_validation_dataset(struct matrix *X, struct matrix *Y) {
-    FILE* images = fopen("t10k-images-idx3-ubyte", "r");
-    FILE* labels = fopen("t10k-labels-idx1-ubyte", "r");
+    FILE* images = fopen("t10k-images-idx3-ubyte", "rb");
+    FILE* labels = fopen("t10k-labels-idx1-ubyte", "rb");
 
     fseek(images, 16, 1);
     fseek(labels, 8, 1);
     
     unsigned char image[28 * 28];
-    unsigned int label;
+    unsigned char label[1];
 
     for (int current = 0; current < 10000; current++) {
-        fgets(image, 28 * 28, images);
-        label = fgetc(labels);
+        fread((void *)image, 28 * 28, 1, images);
+        fread((void *)label, 1, 1, labels);
         // Load the image into the matrix.
         for (int i = 0; i < 28*28; i++) {
             X->buffer[current * 28*28 + i] = (double)(image[i]) / 255.0;
@@ -86,7 +88,7 @@ void load_validation_dataset(struct matrix *X, struct matrix *Y) {
 
         // Load the label into the matrix.
         for (int i = 0; i < 10; i++) {
-            if (i == label) {
+            if (i == label[0]) {
                 Y->buffer[current * 10 + i] = 1.0;
             } else {
                 Y->buffer[current * 10 + i] = 0.0;
@@ -103,7 +105,7 @@ void main() {
 
     // Initialize the network and its matrices.
     int data_size = 60000;
-    int batch_size = 250;
+    int batch_size = 200;
     int input_size = 28 * 28;
     int h1_size = 128;
     int h2_size = 128;
@@ -119,7 +121,6 @@ void main() {
     matrix_init(&X, data_size, input_size);
     matrix_init(&Y, data_size, h3_size);
     load_dataset(&X, &Y);
-    shuffle(X.buffer, Y.buffer, data_size, sizeof(double) * input_size, sizeof(double) * h3_size);
 
     struct matrix input, h1_output, a1_output, h2_output, a2_output, h3_output, a3_output, l_output, y;
     matrix_init(&input, batch_size, input_size);
@@ -141,22 +142,22 @@ void main() {
     matrix_init(&h1_d_inputs, batch_size, input_size);
 
     layer_dense_init(&h1, input_size, h1_size, &input, &h1_output, &a1_d_inputs, &h1_d_inputs);
-    layer_dense_init_values(&h1, WI_GLOROT_NORMAL, BI_ZEROS);
-    layer_dense_init_regularization(&h1, 0.001, 0.001, 0.00, 0.000);
+    layer_dense_init_values(&h1, WI_HE_NORMAL, BI_ZEROS);
+    layer_dense_init_regularization(&h1, 0.000, 0.001, 0.00, 0.000);
     activation_relu_init(&a1, h1_size, &h1_output, &a1_output, &h2_d_inputs, &a1_d_inputs);
     layer_dense_init(&h2, h1_size, h2_size, &a1_output, &h2_output, &a2_d_inputs, &h2_d_inputs);
-    layer_dense_init_values(&h2, WI_GLOROT_NORMAL, BI_ZEROS);
-    layer_dense_init_regularization(&h2, 0.001, 0.001, 0.0, 0.000);
+    layer_dense_init_values(&h2, WI_HE_NORMAL, BI_ZEROS);
+    layer_dense_init_regularization(&h2, 0.00, 0.001, 0.0, 0.000);
     activation_relu_init(&a2, h2_size, &h2_output, &a2_output, &h3_d_inputs, &a2_d_inputs);
     layer_dense_init(&h3, h2_size, h3_size, &a2_output, &h3_output, &l_d_inputs, &h3_d_inputs);
-    layer_dense_init_values(&h3, WI_GLOROT_NORMAL, BI_ZEROS);
-    layer_dense_init_regularization(&h3, 0.001, 0.001, 0.00, 0.000);
+    layer_dense_init_values(&h3, WI_HE_NORMAL, BI_ZEROS);
+    layer_dense_init_regularization(&h3, 0.00, 0.001, 0.00, 0.000);
     // Note that the softmax's gradients will not be used in training.
     activation_softmax_init(&a3, h3_size, &h3_output, &a3_output, &l_output, &l_d_inputs);
     loss_crossentropy_init(&l, h3_size, &a3_output, &y, &l_output, &l_d_inputs);
 
     struct optimizer_adam adam_h1, adam_h2, adam_h3;
-    double learning_rate = 0.005;
+    double learning_rate = 0.001;
     optimizer_adam_init(&adam_h1, &h1, learning_rate, 0.9, 0.999, 0, 1.0e-7);
     optimizer_adam_init(&adam_h2, &h2, learning_rate, 0.9, 0.999, 0, 1.0e-7);
     optimizer_adam_init(&adam_h3, &h3, learning_rate, 0.9, 0.999, 0, 1.0e-7);
@@ -166,12 +167,13 @@ void main() {
 
     int debug_out_size;
     char debug_out[64];
-    for (int epoch = 0; epoch < 5; epoch++) {
+    for (int epoch = 0; epoch < 2; epoch++) {
+        shuffle(X.buffer, Y.buffer, data_size, sizeof(double) * input_size, sizeof(double) * h3_size);
         loss = 0.0;
         for (int batch = 0; batch < data_size; batch += batch_size) {
             // Load in the batch data.
-            memcpy((void*)input.buffer, (void*)&X.buffer[batch_size * input_size], batch_size * input_size * sizeof(double));
-            memcpy((void*)y.buffer, (void*)&Y.buffer[batch_size * h3_size], batch_size * h3_size * sizeof(double));
+            memcpy((void*)input.buffer, (void*)&X.buffer[batch * input_size], batch_size * input_size * sizeof(double));
+            memcpy((void*)y.buffer, (void*)&Y.buffer[batch * h3_size], batch_size * h3_size * sizeof(double));
 
             // Perform a forward pass.
             layer_dense_forward(&h1);
@@ -191,9 +193,9 @@ void main() {
             layer_dense_backward(&h1);
 
             // Train.
-            optimizer_adam_update(&adam_h1, epoch);
-            optimizer_adam_update(&adam_h2, epoch);
-            optimizer_adam_update(&adam_h3, epoch);
+            optimizer_adam_update(&adam_h1, epoch * (data_size / batch_size) + (batch / batch_size));
+            optimizer_adam_update(&adam_h2, epoch * (data_size / batch_size) + (batch / batch_size));
+            optimizer_adam_update(&adam_h3, epoch * (data_size / batch_size) + (batch / batch_size));
 
             debug_out_size = sprintf(debug_out, "\rbatch: %d/%d avg loss: %f", batch/batch_size, data_size/batch_size, loss / (double)(batch / batch_size));
             printf(debug_out);
@@ -215,8 +217,8 @@ void main() {
     int max_index = 0, max_y_index = 0, num_correct = 0;
     for (int batch = 0; batch < data_size; batch += batch_size) {
         // Load in the batch data.
-        memcpy((void*)input.buffer, (void*)&X.buffer[batch_size * input_size], batch_size * input_size * sizeof(double));
-        memcpy((void*)y.buffer, (void*)&Y.buffer[batch_size * h3_size], batch_size * h3_size * sizeof(double));
+        memcpy((void*)input.buffer, (void*)&X.buffer[batch * input_size], batch_size * input_size * sizeof(double));
+        memcpy((void*)y.buffer, (void*)&Y.buffer[batch * h3_size], batch_size * h3_size * sizeof(double));
         
         // Perform a forward pass.
         layer_dense_forward(&h1);
@@ -227,7 +229,7 @@ void main() {
         activation_softmax_forward_stable(&a3);
         
         for (int i = 0; i < y.n_rows; i++) {
-            max = -1.0;
+            max = -DBL_MAX;
             for (int j = 0; j < y.n_cols; j++) {
                 if (a3_output.buffer[i * h3_size + j] > max) {
                     max = a3_output.buffer[i * h3_size + j];
@@ -248,11 +250,11 @@ void main() {
             }
         }
     }
-    printf("validation accuracy: %d %d", num_correct, 10000);
-    printf("validation accuracy: %f", (double)num_correct/10000.0);
+    printf("validation accuracy: %d %d\n", num_correct, 10000);
+    printf("validation accuracy: %f\n", (double)num_correct/10000.0);
 
     // Save the network.
-    FILE *save_file = fopen("mnist_test.dat", "w");
+    FILE *save_file = fopen("mnist_test_complex.dat", "w");
     if (save_file != NULL) {
         fwrite(h1.weights.buffer, h1.weights.size * sizeof(double), 1, save_file);
         fwrite(h1.biases.buffer, h1.biases.size * sizeof(double), 1, save_file);
@@ -261,7 +263,7 @@ void main() {
         fwrite(h3.weights.buffer, h3.weights.size * sizeof(double), 1, save_file);
         fwrite(h3.biases.buffer, h3.biases.size * sizeof(double), 1, save_file);
     } else {
-        printf("Failed to save mnist_test network.\n");
+        printf("Failed to save mnist_test_complex network.\n");
     }
     fclose(save_file);
 
