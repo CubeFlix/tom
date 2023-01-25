@@ -9,6 +9,6 @@ a neural network written in c. see `mnist_test.c` for usage example.
 - [x] dropout
 - [x] regularization
 - [x] iris dataset
-- [ ] mnist numbers dataset
+- [x] mnist numbers dataset
 - [ ] convolution
 - [ ] optimization with multiplication over division
