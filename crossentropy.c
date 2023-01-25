@@ -76,15 +76,17 @@ double loss_crossentropy_forward(struct loss_crossentropy *obj) {
 // Perform a backward pass on the loss.
 void loss_crossentropy_backward(struct loss_crossentropy *obj) {
     // Iterate over each value.
+	double one_over_n_rows = 1.0 / (double)obj->input->n_rows;
     for (int i = 0; i < obj->input->size; i++) {
-        obj->d_inputs->buffer[i] = -obj->y->buffer[i] / obj->input->buffer[i] / (double)obj->input->n_rows;
+        obj->d_inputs->buffer[i] = -obj->y->buffer[i] / obj->input->buffer[i] * one_over_n_rows;
     }
 }
 
 // Perform a backward pass on the loss and the softmax activation.
 void loss_crossentropy_backward_softmax(struct loss_crossentropy *obj) {
     // Iterate over each value.
+	double one_over_n_rows = 1.0 / (double)obj->input->n_rows;
     for (int i = 0; i < obj->input->size; i++) {
-        obj->d_inputs->buffer[i] = (obj->input->buffer[i] - obj->y->buffer[i]) / (double)obj->input->n_rows;
+        obj->d_inputs->buffer[i] = (obj->input->buffer[i] - obj->y->buffer[i]) * one_over_n_rows;
     }
 }

@@ -1,6 +1,6 @@
 # tom
 
-a neural network written in c.
+a neural network written in c. see `mnist_test.c` for usage example.
 
 ## todo
 
@@ -9,5 +9,6 @@ a neural network written in c.
 - [x] dropout
 - [x] regularization
 - [x] iris dataset
-- [x] mnist numbers dataset
+- [ ] mnist numbers dataset
 - [ ] convolution
+- [ ] optimization with multiplication over division
