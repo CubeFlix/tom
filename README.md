@@ -11,4 +11,5 @@ a neural network written in c. see `mnist_test.c` for usage example.
 - [x] iris dataset
 - [x] mnist numbers dataset
 - [ ] convolution
-- [ ] optimization with multiplication over division
+- [x] optimization with multiplication over division
+- [ ] clean

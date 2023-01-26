@@ -3,6 +3,7 @@
 
 #include "errors.h"
 #include "adam.h"
+#include "binary_crossentropy.h";
 #include "crossentropy.h"
 #include "dense.h"
 #include "matrix.h"

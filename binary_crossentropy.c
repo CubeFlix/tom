@@ -54,6 +54,7 @@ int loss_binary_crossentropy_init(struct loss_binary_crossentropy *obj,
 // Perform a forward pass on the loss.
 double loss_binary_crossentropy_forward(struct loss_binary_crossentropy *obj) {
     double clipped, sum, sum_samples = 0.0;
+    double one_over_input_size = 1.0 / (double)obj->input_size;
     
     // Calculate the forward pass, returning the average loss over all samples.
     // Iterate over each sample.
@@ -69,7 +70,7 @@ double loss_binary_crossentropy_forward(struct loss_binary_crossentropy *obj) {
                 sum += -log(1.0 - clipped);
             }
         }
-        obj->output->buffer[i] = sum / (double)obj->input_size;
+        obj->output->buffer[i] = sum * one_over_input_size;
         sum_samples += obj->output->buffer[i];
     }
     return sum_samples / (double)obj->input->n_rows;
@@ -78,10 +79,11 @@ double loss_binary_crossentropy_forward(struct loss_binary_crossentropy *obj) {
 // Perform a backward pass on the loss.
 void loss_binary_crossentropy_backward(struct loss_binary_crossentropy *obj) {
     double clipped;
+    double one_over_input_rows = 1.0 / (double)obj->input->n_rows;
 
     // Iterate over each item.
     for (int i = 0; i < obj->input->size; i++) {
         clipped = fmin(1.0-1.0e-5, fmax(obj->input->buffer[i], 1.0e-5));
-        obj->d_inputs->buffer[i] = -(obj->y->buffer[i] / clipped - (1.0 - obj->y->buffer[i]) / (1.0 - clipped)) / (double)(obj->input->n_rows);
+        obj->d_inputs->buffer[i] = -(obj->y->buffer[i] / clipped - (1.0 - obj->y->buffer[i]) / (1.0 - clipped)) * one_over_input_rows;
     }
 }
