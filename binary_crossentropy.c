@@ -1,6 +1,8 @@
 // binary_crossentropy.c
 // Binary cross-entropy loss function.
 
+#include <math.h>
+
 #include "binary_crossentropy.h"
 #include "matrix.h"
 

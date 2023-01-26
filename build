@@ -1,1 +1,1 @@
-gcc -O3 -Wall $1.c matrix.c dense.c random.c relu.c mse.c sgd.c adam.c softmax.c sigmoid.c crossentropy.c binary_crossentropy.c dropout.c -o $1 -lm
+gcc -O3 -Wall $1.c matrix.c dense.c random.c relu.c mse.c sgd.c adam.c softmax.c sigmoid.c crossentropy.c binary_crossentropy.c dropout.c -o $1
