@@ -3,7 +3,7 @@
 
 #include "errors.h"
 #include "adam.h"
-#include "binary_crossentropy.h";
+#include "binary_crossentropy.h"
 #include "crossentropy.h"
 #include "dense.h"
 #include "matrix.h"
@@ -14,3 +14,4 @@
 #include "sigmoid.h"
 #include "softmax.h"
 #include "dropout.h"
+#include "conv2d.h"

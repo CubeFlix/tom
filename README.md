@@ -15,4 +15,5 @@ a neural network written in c. see `mnist_test.c` for usage example.
 - [x] optimization with multiplication over division
 - [ ] more activations and functions
 - [ ] cifar?
+- [ ] rnn?
 - [ ] clean
