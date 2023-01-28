@@ -1,6 +1,8 @@
 // conv2d.c
 // 2D conv layer.
 
+#include <stdio.h>
+
 #include "conv2d.h"
 #include "dense.h"
 #include "matrix.h"
@@ -198,7 +200,88 @@ void layer_conv2d_forward(struct layer_conv2d *obj) {
     }
 }
 
-// // Perform a backward pass on the layer.
-// void layer_conv2d_backward(struct layer_conv2d *obj) {
-// 
-// }
+// Perform a backward pass on the layer.
+void layer_conv2d_backward(struct layer_conv2d *obj) {
+    int output_filter_size = obj->d_outputs->n_rows * obj->output_height * obj->output_width;
+    int weight_filter_size = obj->n_channels * obj->filter_size * obj->filter_size;
+    int weight_channel_size = obj->filter_size * obj->filter_size;
+    
+    double sum, one_over_n_rows = 1.0 / (double)obj->d_outputs->n_rows;
+    
+    // Calculate gradients on biases.
+    for (int i = 0; i < obj->n_filters; i++) {
+        sum = 0.0;
+
+        // Sum the values for each filter.
+        for (int j = 0; j < output_filter_size; j++) {
+            sum += obj->d_outputs->buffer[i * output_filter_size + j];
+        }
+        obj->d_biases.buffer[i] = sum * one_over_n_rows;
+    }
+
+    // Zero the gradients.
+    for (int i = 0; i < obj->d_weights.size; i++) {
+        obj->d_weights.buffer[i] = 0.0;
+    }
+    for (int i = 0; i < obj->d_inputs->size; i++) {
+        obj->d_inputs->buffer[i] = 0.0;
+    }
+
+    // Calculate gradients on weights.
+    for (int sample = 0; sample < obj->input->n_rows; sample++) {
+        for (int filter = 0; filter < obj->n_filters; filter++) {
+            for (int channel = 0; channel < obj->n_channels; channel++) {
+                for (int i = 0; i < obj->filter_size; i++) {
+                    for (int j = 0; j < obj->filter_size; j++) {
+                        sum = 0.0;
+                        for (int stride_height = 0; stride_height < obj->output_height; stride_height++) {
+                            for (int stride_width = 0; stride_width < obj->output_width; stride_width++) {
+                                // Multiply the input value (sample, channel, 
+                                // stride_height * stride + i, stride_width * 
+                                // stride + j) with gradient value (sample, filter, i, j).
+                                sum += obj->input->buffer[sample * (obj->n_channels * obj->input_height * obj->input_width) + channel * obj->input_height * obj->input_width + (stride_height * obj->stride + i) * obj->input_width + (stride_width * obj->stride + j)] * 
+                                       obj->d_outputs->buffer[sample * (obj->n_filters * obj->output_height * obj->output_height) + filter * obj->output_height * obj->output_height + stride_height * obj->output_height + stride_width];
+                            }
+                        }
+                        obj->d_weights.buffer[filter * weight_filter_size + channel * weight_channel_size + i * obj->filter_size + j] += sum;
+                    }
+                }
+            }
+        }
+    }
+
+    // Normalize weight gradients over all samples.
+    for (int i = 0; i < obj->d_weights.size; i++) {
+        obj->d_weights.buffer[i] *= one_over_n_rows;
+    }
+
+    // Calculate gradients on inputs.
+    for (int sample = 0; sample < obj->input->n_rows; sample++) {
+        for (int stride_height = 0; stride_height < obj->output_height; stride_height++) {
+            for (int stride_width = 0; stride_width < obj->output_width; stride_width++) {
+                for (int kern_i = 0; kern_i < obj->filter_size; kern_i++) {
+                    for (int kern_j = 0; kern_j < obj->filter_size; kern_j++) {
+                        for (int channel = 0; channel < obj->n_channels; channel++) {
+                            sum = 0.0;
+                            for (int filter = 0; filter < obj->n_filters; filter++) {
+                            
+                                // Multiply the weight value (filter, channel, kern_i, kern_j)
+                                // with gradient value (sample, filter, stride_height,
+                                // stride_width).
+                                sum += obj->weights.buffer[filter * (obj->n_channels * obj->filter_size * obj->filter_size) + channel * (obj->filter_size * obj->filter_size) + kern_i * obj->filter_size + kern_j] * 
+                                       obj->d_outputs->buffer[sample * (obj->n_filters * obj->output_height * obj->output_width) + filter * (obj->output_height * obj->output_width) + stride_height * obj->output_width + stride_width];
+                            }
+                            // Add the gradient value to (sample, channel, stride_height * filter_size + i, stride_width * filter_size + j)
+                            obj->d_inputs->buffer[sample * (obj->n_channels * obj->input_height * obj->input_width) + channel * (obj->output_height * obj->output_width) + (stride_height * obj->filter_size + kern_i) * obj->output_width + (stride_width * obj->filter_size + kern_j)] += sum;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Normalize input gradients over all samples.
+    for (int i = 0; i < obj->d_inputs->size; i++) {
+        obj->d_inputs->buffer[i] *= one_over_n_rows;
+    }
+}
