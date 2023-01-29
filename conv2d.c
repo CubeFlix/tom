@@ -2,10 +2,12 @@
 // 2D conv layer.
 
 #include <stdio.h>
+#include <math.h>
 
 #include "conv2d.h"
 #include "dense.h"
 #include "matrix.h"
+#include "random.h"
 
 // Initialize an empty layer object.
 int layer_conv2d_init(struct layer_conv2d *obj, int n_channels, 

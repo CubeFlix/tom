@@ -14,6 +14,7 @@ a neural network written in c. see `mnist_test.c` for usage example.
 - [ ] pooling
 - [x] optimization with multiplication over division
 - [ ] more activations and functions
+- [ ] model object
 - [ ] cifar?
 - [ ] rnn?
 - [ ] clean

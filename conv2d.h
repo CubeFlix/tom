@@ -4,11 +4,8 @@
 #ifndef CONV2D_H
 #define CONV2D_H
 
-#include <math.h>
-
-#include "dense.h"
 #include "matrix.h"
-#include "random.h"
+#include "dense.h"
 
 extern char *LAST_ERROR;
 
