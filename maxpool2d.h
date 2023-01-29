@@ -19,10 +19,9 @@ struct layer_maxpool2d {
     // The input and output matrices.
     struct matrix *input, *output;
 
-    // Max pooling cache. We store the x and y position of the maximum value 
-    // for each stride. The total dimensions of the cache are (samples, 
-    // channels, output_height, output_width, 2). 
-    int *cache;
+    // Max pooling cache. For each input value, the value is 1.0 where the 
+    // value is the maximum, while the value is 0.0 where the value is not.
+    struct matrix cache;
     
     // Gradients on the outputs and inputs, respectively.
     struct matrix *d_outputs, *d_inputs;

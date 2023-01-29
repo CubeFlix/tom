@@ -22,7 +22,7 @@ void main() {
     layer_maxpool2d_init(&m, filters, out_height, out_width, 3, 3, &output, &pool_output, &d_output_pool, &d_output);
 
     for (int i = 0; i < input.size; i++) {
-        input.buffer[i] = 1.0;
+        input.buffer[i] = random_normal(0.0, 1.0);
     }
     for (int i = 0; i < d_output_pool.size; i++) {
         d_output_pool.buffer[i] = 1.0;
@@ -75,6 +75,22 @@ void main() {
     //     printf("\n");
     // }
 
+    printf("output maxpool");
+    for (int sample = 0; sample < samples; sample++) {
+        // Iterate over each filter.
+        for (int channel = 0; channel < filters; channel++) {
+            for (int i = 0; i < out_height; i++) {
+                for (int j = 0; j < out_width; j++) {
+                    printf("%f ", output.buffer[sample * (filters * out_height * out_width) + channel * (out_height * out_width) + i * out_width + j]);
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
+    
+    printf("d_inputs maxpool");
     for (int sample = 0; sample < samples; sample++) {
         // Iterate over each filter.
         for (int channel = 0; channel < filters; channel++) {

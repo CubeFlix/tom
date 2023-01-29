@@ -60,25 +60,21 @@ int layer_maxpool2d_init(struct layer_maxpool2d *obj, int n_channels,
     }
 
     // Initialize the max pool cache. 
-    obj->cache = malloc(output->n_rows * obj->n_channels * obj->output_height * obj->output_width * 2 * sizeof(int));
-    if (obj->cache == NULL) {
-        LAST_ERROR = "Failed to allocate max pool cache.";
+    if (!matrix_init(&obj->cache, obj->input->n_rows, obj->n_channels * obj->input_height * obj->input_width)) {
         return 0;
     }
-    
+
     return 1;
 }
 
 // Free the cache owned by the layer.
 void layer_maxpool2d_free(struct layer_maxpool2d *obj) {
-    free(obj->cache);
+    matrix_free(&obj->cache);
 }
 
 // Perform a forward pass on the layer.
 void layer_maxpool2d_forward(struct layer_maxpool2d *obj) {
     double max, current;
-    int maxX = 0, maxY = 0;
-    int cache_idx;
 
     // Iterate over each output value.
     for (int sample = 0; sample < obj->input->n_rows; sample++) {
@@ -87,7 +83,8 @@ void layer_maxpool2d_forward(struct layer_maxpool2d *obj) {
             for (int i = 0; i < obj->output_height; i++) {
                 for (int j = 0; j < obj->output_width; j++) {
                     max = -INFINITY;
-                    // Perform the max pooling on the stride.
+                    // Perform the max pooling on the stride. Find the maximum
+                    // value in the stride.
                     for (int x = 0; x < obj->pool_size; x++) {
                         for (int y = 0; y < obj->pool_size; y++) {
                             // The current value to check is (sample, channel, 
@@ -95,18 +92,23 @@ void layer_maxpool2d_forward(struct layer_maxpool2d *obj) {
                             current = obj->input->buffer[sample * (obj->n_channels * obj->input_height * obj->input_width) + channel * (obj->input_height * obj->input_width) + (i * obj->stride + x) * obj->input_width + (j * obj->stride + y)];
                             if (current > max) {
                                 max = current;
-                                maxX = x;
-                                maxY = y;
                             }
                         }
                     }
                     // Set the max value.
                     obj->output->buffer[sample * (obj->n_channels * obj->output_height * obj->output_width) + channel * (obj->output_height * obj->output_width) + i * obj->output_width + j] = max;
                 
-                    // Set the position of the max value in the max pool cache.
-                    cache_idx = sample * (obj->n_channels * obj->output_height * obj->output_width * 2) + channel * (obj->output_height * obj->output_width * 2) + i * obj->output_width * 2 + j * 2;
-                    obj->cache[cache_idx] = maxX;
-                    obj->cache[cache_idx + 1] = maxY; 
+                    // Set the cache.
+                    for (int x = 0; x < obj->pool_size; x++) {
+                        for (int y = 0; y < obj->pool_size; y++) {
+                            // Set the cache value to 1.0 if the value is the maximum.
+                            if (obj->input->buffer[sample * (obj->n_channels * obj->input_height * obj->input_width) + channel * (obj->input_height * obj->input_width) + (i * obj->stride + x) * obj->input_width + (j * obj->stride + y)] == max) {
+                                obj->cache.buffer[sample * (obj->n_channels * obj->input_height * obj->input_width) + channel * (obj->input_height * obj->input_width) + (i * obj->stride + x) * obj->input_width + (j * obj->stride + y)] = 1.0;
+                            } else {
+                                obj->cache.buffer[sample * (obj->n_channels * obj->input_height * obj->input_width) + channel * (obj->input_height * obj->input_width) + (i * obj->stride + x) * obj->input_width + (j * obj->stride + y)] = 0.0;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -114,10 +116,7 @@ void layer_maxpool2d_forward(struct layer_maxpool2d *obj) {
 }
 
 // Perform a backward pass on the layer.
-void layer_maxpool2d_backward(struct layer_maxpool2d *obj) {
-    int maxX = 0, maxY = 0;
-    int cache_idx;
- 
+void layer_maxpool2d_backward(struct layer_maxpool2d *obj) { 
     // Zero the gradients.
     for (int i = 0; i < obj->d_inputs->size; i++) {
         obj->d_inputs->buffer[i] = 0.0;
@@ -130,17 +129,13 @@ void layer_maxpool2d_backward(struct layer_maxpool2d *obj) {
             // Iterate over each output value (stride).
             for (int i = 0; i < obj->output_height; i++) {
                 for (int j = 0; j < obj->output_width; j++) {
-                    // Increment the max value by the gradient. The gradient 
-                    // should be zero where the value is not the maximum, while
-                    // the gradient should be the gradient on the input where 
-                    // the value is the maximum. We will set the value at 
-                    // (sample, channel, i * stride + maxX, j * stride + maxY).
-                    cache_idx = sample * (obj->n_channels * obj->output_height * obj->output_width * 2) + channel * (obj->output_height * obj->output_width * 2) + i * obj->output_width * 2 + j * 2;
-                    maxX = obj->cache[cache_idx];
-                    maxY = obj->cache[cache_idx + 1];
-
-                    obj->d_inputs->buffer[sample * (obj->n_channels * obj->input_height * obj->input_width) + channel * (obj->input_height * obj->input_width) + (i * obj->stride + maxX) * obj->input_width + (j * obj->stride + maxY)] += 
-                        obj->d_outputs->buffer[sample * (obj->n_channels * obj->output_height * obj->output_width) + channel * (obj->output_height * obj->output_width) + i * obj->output_width + j];
+                    for (int x = 0; x < obj->pool_size; x++) {
+                        for (int y = 0; y < obj->pool_size; y++) {
+                            obj->d_inputs->buffer[sample * (obj->n_channels * obj->input_height * obj->input_width) + channel * (obj->input_height * obj->input_width) + (i * obj->stride + x) * obj->input_width + (j * obj->stride + y)] += 
+                                obj->d_outputs->buffer[sample * (obj->n_channels * obj->output_height * obj->output_width) + channel * (obj->output_height * obj->output_width) + i * obj->output_width + j] * 
+                                obj->cache.buffer[sample * (obj->n_channels * obj->input_height * obj->input_width) + channel * (obj->input_height * obj->input_width) + (i * obj->stride + x) * obj->input_width + (j * obj->stride + y)];
+                        }
+                    }
                 }
             }
         }
