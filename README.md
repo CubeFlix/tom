@@ -10,8 +10,8 @@ a neural network written in c. see `mnist_test.c` for usage example.
 - [x] regularization
 - [x] iris dataset
 - [x] mnist numbers dataset
-- [ ] convolution
-- [ ] pooling
+- [x] convolution
+- [x] pooling
 - [x] optimization with multiplication over division
 - [ ] more activations and functions
 - [ ] model object
