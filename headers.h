@@ -16,3 +16,4 @@
 #include "dropout.h"
 #include "conv2d.h"
 #include "maxpool2d.h"
+#include "model.h"

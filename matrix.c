@@ -2,7 +2,6 @@
 // Matrix buffer objects.
 
 #include <stdlib.h>
-#include <assert.h>
 
 #include "matrix.h"
 
@@ -26,4 +25,5 @@ int matrix_init(struct matrix *obj, int n_rows, int n_cols) {
 void matrix_free(struct matrix *obj) {
     // Free the buffer.
     free(obj->buffer);
+    obj->buffer = NULL;
 }
