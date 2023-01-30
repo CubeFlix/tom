@@ -129,6 +129,9 @@ struct model {
     // We store the input, output and y matrices.
     struct matrix *input, *output, *y;
 
+    // Loss output.
+    struct matrix *loss_output;
+
     // Store the last gradient.
     struct matrix *last_gradient;
 };

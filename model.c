@@ -79,6 +79,10 @@ int loss_free(struct loss *obj) {
             LAST_ERROR = "Invalid loss type.";
             return 0;
     }
+
+    // Free the object.
+    free(obj->obj);
+
     return 1;
 }
 
@@ -120,6 +124,11 @@ int model_free(struct model *obj) {
     matrix_free(obj->y);
     free(obj->y);
     obj->y = NULL;
+
+    // Free the loss output matrix.
+    matrix_free(obj->loss_output);
+    free(obj->loss_output);
+    obj->loss_output = NULL;
 
     // Free the first input matrix.
     matrix_free(obj->input);
@@ -186,6 +195,12 @@ struct layer *model_add_layer(struct model *obj, enum layer_type type, int input
     return l;
 }
 
+// Set the layer's loss.
+void model_set_loss(struct model *obj, enum loss_type type) {
+    // Create the loss object.
+    obj->loss.type = type;
+}
+
 // Finalize and initialize the model.
 int model_finalize(struct model *obj) {
     // Ensure that there is at least one layer.
@@ -230,6 +245,7 @@ int model_finalize(struct model *obj) {
                     return 0;
                 }
 
+                // Set the values for the layer.
                 current->obj = dense;
                 current->input = obj->output;
                 current->output = current_output;
@@ -259,5 +275,36 @@ int model_finalize(struct model *obj) {
 
     // Initialize the y matrix.
     obj->y = calloc(1, sizeof(struct matrix));
-    return matrix_init(obj->y, obj->n_samples, obj->output->n_cols);
+    if (!matrix_init(obj->y, obj->n_samples, obj->output->n_cols)) {
+        return 0;
+    }
+
+    // Initialize the loss output.
+    obj->loss_output = calloc(1, sizeof(struct matrix));
+    if (!matrix_init(obj->loss_output, obj->n_samples, 1)) {
+        return 0;
+    }
+
+    // Initialize the loss.
+    obj->loss.d_input = obj->last_gradient;
+    obj->loss.input = obj->output;
+    obj->loss.output = obj->loss_output;
+    switch (obj->loss.type) {
+        case LOSS_MSE:
+            struct loss_mse *mse = calloc(1, sizeof(struct loss_mse));
+            obj->loss.obj = mse;
+            if (!loss_mse_init(mse, obj->output->n_cols, obj->loss.input, obj->y, obj->loss.output, obj->loss.d_input)) {
+                return 0;
+            }
+            break;
+        case LOSS_CROSSENTROPY:
+            break;
+        case LOSS_BINARY_CROSSENTROPY:
+            break;
+        default:
+            LAST_ERROR = "Invalid loss type.";
+            return 0;
+    }
+
+    return 1;
 }
