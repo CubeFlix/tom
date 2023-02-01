@@ -23,7 +23,10 @@ void main() {
     model_add_layer(m, LAYER_DENSE, 10, 3);
     model_add_layer(m, LAYER_SOFTMAX, 3, 3);
     model_set_loss(m, LOSS_MSE);
-    model_finalize(m);
+    if (!model_finalize(m)) {
+        printf(LAST_ERROR);
+        exit(1);
+    }
     printf("finalized\n");
     struct layer *current = m->first;
     // printf("%p %p\n", (void *)current, (void *)m.first);
@@ -34,6 +37,7 @@ void main() {
         fflush(stdout);
         current = current->next;
     } while (current != NULL);
+    printf("loss %d %d\n", m->loss.type, m->loss.input->n_cols);
     model_free(m);
     free(m);
     printf("freed\n");

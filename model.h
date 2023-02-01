@@ -82,10 +82,11 @@ struct loss {
     // The loss object.
     void *obj;
 
-    // Matrices for the loss. We store the input and output matrices, along
-    // with the input gradients.
+    // Matrices for the loss. We store the input and output matrices, along 
+    // with the gradient and y matrix.
     struct matrix *input, *output;
     struct matrix *d_input;
+    struct matrix *y;
 };
 
 // Free the loss object.

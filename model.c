@@ -83,6 +83,16 @@ int layer_init_optimizer(struct layer *obj) {
 
 }
 
+// Perform a forward pass on the layer.
+int layer_forward(struct layer *obj) {
+    return 1;
+}
+
+// Perform a backward pass on the layer.
+int layer_backward(struct layer *obj) {
+    return 1;
+}
+
 // Free the layer, along with its matrices and optimizer. If a matrix is 
 // already freed or not initialized, it will be skipped.
 int layer_free(struct layer *obj) {
@@ -131,23 +141,23 @@ int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
               struct matrix* output, struct matrix* d_input) {
     // Set the loss values.
     obj->input = input;
-    obj->y = y;
     obj->output = output;
     obj->d_input = d_input;
-    
-    switch (obj->loss.type) {
+    obj->y = y;
+
+    switch (obj->type) {
     case LOSS_MSE:;
         // Initialize the MSE loss.
         struct loss_mse* mse = calloc(1, sizeof(struct loss_mse));
-        if (!loss_mse_init(mse, output->n_cols, input, y, output, d_input)) {
+        if (!loss_mse_init(mse, input->n_cols, input, y, output, d_input)) {
             return 0;
         }
         obj->obj = mse;
         break;
-    case LOSS_CROSSENTROPY:
+    case LOSS_CROSSENTROPY:;
         // Initialize the crossentropy loss.
         struct loss_crossentropy* crossentropy = calloc(1, sizeof(struct loss_crossentropy));
-        if (!loss_crossentropy_init(crossentropy, output->n_cols, input, y, output, d_input)) {
+        if (!loss_crossentropy_init(crossentropy, input->n_cols, input, y, output, d_input)) {
             return 0;
         }
         obj->obj = crossentropy;
