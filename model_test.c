@@ -49,14 +49,7 @@ void main() {
     for (int i = 0; i < m->y->size; i++) {
         m->y->buffer[i] = 0.1;
     }
-    model_forward(m, false);
-    for (int i = 0; i < m->output->size; i++) {
-        printf("%f ", m->output->buffer[i]);
-    }
-    model_backward(m);
-    for (int i = 0; i < m->first->d_output->size; i++) {
-        printf("%f ", m->first->d_output->buffer[i]);
-    }
+    model_train();
 
     model_free(m);
     free(m);

@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "model.h"
 #include "matrix.h"
@@ -272,6 +273,8 @@ int layer_update(struct layer* obj) {
         }
     }
 
+    obj->opt.iter++;
+
     return 1;
 }
 
@@ -325,13 +328,13 @@ int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
 int loss_forward(struct loss *obj) {
     switch (obj->type) {
     case LOSS_MSE:
-        loss_mse_forward(obj->obj);
+        obj->batch_loss = loss_mse_forward(obj->obj);
         break;
     case LOSS_CROSSENTROPY:
-        loss_crossentropy_forward(obj->obj);
+        obj->batch_loss = loss_crossentropy_forward(obj->obj);
         break;
     case LOSS_BINARY_CROSSENTROPY:
-        loss_binary_crossentropy_forward(obj->obj);
+        obj->batch_loss = loss_binary_crossentropy_forward(obj->obj);
         break;
     default:
         LAST_ERROR = "Invalid loss type.";
@@ -574,10 +577,31 @@ int model_init_optimizers(struct model* obj, enum optimizer_type type, ...) {
     return 1;
 }
 
-// Perdict.
+// Perdict a single sample. TODO
+int model_predict(struct model* obj, struct matrix* X) {
+    return 1;
+}
 
-// Calculate loss and accuracy.
-int model_loss()
+// Calculate model loss.
+double model_calc_loss(struct model *obj, struct matrix *X, struct matrix *Y) {
+    double loss = 0.0;
+    for (int batch_start = 0; batch_start < X->n_rows; batch_start += obj->n_samples) {
+        // Copy the input data and Y values into the model.
+        memcpy(obj->input->buffer, X->buffer[batch_start * X->n_cols], sizeof(double) * X->n_cols * obj->n_samples);
+        memcpy(obj->y->buffer, Y->buffer[batch_start * Y->n_cols], sizeof(double) * Y->n_cols * obj->n_samples);
+
+        // Perform the forward pass over the network.
+        if (!model_forward(obj, false)) {
+            return 0;
+        }
+
+        // Accumulate the loss.
+        loss += obj->loss.batch_loss;
+    }
+
+    // Return the average loss.
+    return loss / (double)(X->n_rows / obj->n_samples);
+}
 
 // Train the model.
 int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epochs, bool debug) {
@@ -594,11 +618,11 @@ int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epoch
     }
 
     int batch_n;
-
     for (int epoch = 0; epoch < epochs; epoch++) {
         batch_n = 0;
         for (int batch_start = 0; batch_start < X->n_rows; batch_start += obj->n_samples) {
             if (debug) {
+                // Clear the debug output.
                 printf("\33[2K\r");
             }
 
@@ -630,8 +654,12 @@ int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epoch
         }
 
         if (debug) {
-            // Display the epoch, loss, and accuracy.
-            double loss, acc = 
+            // Flush the line.
+            printf("\n");
+
+            // Display the epoch and loss.
+            double loss = model_calc_loss(obj, X, Y);
+            printf("Epoch: %d, Training Loss: %f\n", epoch, loss);
         }
     }
 

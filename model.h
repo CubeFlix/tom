@@ -115,6 +115,9 @@ struct loss {
     struct matrix *input, *output;
     struct matrix *d_input;
     struct matrix *y;
+
+    // Current average batch loss value.
+    double batch_loss;
 };
 
 // Free the loss object.
@@ -165,6 +168,12 @@ int model_finalize(struct model *obj);
 
 // Initialize optimizers on the model.
 int model_init_optimizers(struct model *obj, enum optimizer_type type, ...);
+
+// Calculate model loss.
+double model_calc_loss(struct model* obj, struct matrix* X, struct matrix* Y);
+
+// Train the model.
+int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epochs, bool debug);
 
 // Perform a forward pass on the model.
 int model_forward(struct model *obj, bool training);
