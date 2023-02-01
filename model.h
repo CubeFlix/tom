@@ -26,6 +26,9 @@ struct optimizer {
     // The optimizer type.
     enum optimizer_type type;
 
+    // The current iteration.
+    int iter;
+
     // The optimizer object.
     void* obj;
 };
@@ -163,8 +166,8 @@ int model_finalize(struct model *obj);
 // Initialize optimizers on the model.
 int model_init_optimizers(struct model *obj, enum optimizer_type type, ...);
 
-// Perform a backward pass on the model.
-int model_backward(struct model *obj);
+// Perform a forward pass on the model.
+int model_forward(struct model *obj, bool training);
 
 // Perform a backward pass on the model.
 int model_backward(struct model *obj);

@@ -45,16 +45,16 @@ void optimizer_adam_free(struct optimizer_adam *obj) {
 }
 
 // Update the layer's weights and biases.
-void optimizer_adam_update(struct optimizer_adam *obj, int epoch) {
+void optimizer_adam_update(struct optimizer_adam *obj, int iter) {
     // Calculate the learning rate.
     double learning_rate = obj->learning_rate;
     if (obj->decay) {
-        learning_rate = learning_rate * (1.0 / (1.0 + obj->decay * (double)epoch));
+        learning_rate = learning_rate * (1.0 / (1.0 + obj->decay * (double)iter));
     }
 
     // Store the current corrected momentum and cache values.
     double corrected_m, corrected_c;
-    double bias_correction = (1.0 / (1.0 - pow(obj->beta_1, (double)(epoch + 1))));
+    double bias_correction = (1.0 / (1.0 - pow(obj->beta_1, (double)(iter + 1))));
 
     // Update the weights.
     for (int i = 0; i < obj->weight_m.size; i++) {

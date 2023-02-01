@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
 
 #include "model.h"
 #include "matrix.h"
@@ -86,6 +88,7 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
 // args list, which will be used by the function.
 int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap) {
     obj->opt.type = type;
+    obj->opt.iter = 0;
 
     switch (obj->type) {
     case LAYER_DENSE:
@@ -215,8 +218,58 @@ int layer_free(struct layer *obj) {
     free(obj->obj);
 
     // Free the optimizer.
-    if (!optimizer_free(&obj->opt)) {
-        return 0;
+    if (obj->opt.obj != NULL) {
+        switch (obj->type) {
+        case LAYER_DENSE:
+            switch (obj->opt.type) {
+            case OPTIMIZER_SGD:
+                optimizer_sgd_free((struct optimizer_sgd*)(obj->opt.obj));
+                break;
+            case OPTIMIZER_ADAM:
+                optimizer_adam_free((struct optimizer_adam*)(obj->opt.obj));
+                break;
+            default:
+                LAST_ERROR = "Invalid optimizer type.";
+                return 0;
+            }
+            break;
+        case LAYER_CONV2D:
+            break;
+        default:
+            LAST_ERROR = "Layer is untrainable; cannot free optimizer.";
+            return 0;
+        }
+
+        // Free the optimizer itself.
+        free(obj->opt.obj);
+    }
+
+    return 1;
+}
+
+// Perform an update on the layer's optimizer.
+int layer_update(struct layer* obj) {
+    if (obj->opt.obj != NULL) {
+        switch (obj->type) {
+        case LAYER_DENSE:
+            switch (obj->opt.type) {
+            case OPTIMIZER_SGD:
+                optimizer_sgd_update(obj->opt.obj, obj->opt.iter);
+                break;
+            case OPTIMIZER_ADAM:
+                optimizer_adam_free(obj->opt.obj, obj->opt.iter);
+                break;
+            default:
+                LAST_ERROR = "Invalid optimizer type.";
+                return 0;
+            }
+            break;
+        case LAYER_CONV2D:
+            break;
+        default:
+            LAST_ERROR = "Layer is untrainable; cannot update optimizer.";
+            return 0;
+        }
     }
 
     return 1;
@@ -323,28 +376,6 @@ int loss_free(struct loss *obj) {
     }
 
     // Free the object.
-    free(obj->obj);
-
-    return 1;
-}
-
-// Free an optimizer object.
-int optimizer_free(struct optimizer *obj) {
-    if (obj->obj != NULL) {
-        switch (obj->type) {
-        case OPTIMIZER_SGD:
-            optimizer_sgd_free((struct optimizer_sgd*)(obj->obj));
-            break;
-        case OPTIMIZER_ADAM:
-            optimizer_adam_free((struct optimizer_adam*)(obj->obj));
-            break;
-        default:
-            LAST_ERROR = "Invalid optimizer type.";
-            return 0;
-        }
-    }
-
-    // Free the optimizer itself.
     free(obj->obj);
 
     return 1;
@@ -519,23 +550,8 @@ int model_finalize(struct model *obj) {
 
 // Initialize optimizers on the model.
 int model_init_optimizers(struct model* obj, enum optimizer_type type, ...) {
-    int n_args;
     va_list ap;
-
-    // Get the number of arguments.
-    switch (type) {
-    case OPTIMIZER_SGD:
-        n_args = 3;
-        break;
-    case OPTIMIZER_ADAM:
-        n_args = 5;
-        break;
-    default:
-        LAST_ERROR = "Invalid optimizer type.";
-        return 0;
-    }
-
-    va_start(ap, n_args);
+    va_start(ap, type);
 
     // Loop over each layer.
     struct layer* current = obj->first;
@@ -554,6 +570,70 @@ int model_init_optimizers(struct model* obj, enum optimizer_type type, ...) {
     } while (current != NULL);
 
     va_end(ap);
+
+    return 1;
+}
+
+// Perdict.
+
+// Calculate loss and accuracy.
+int model_loss()
+
+// Train the model.
+int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epochs, bool debug) {
+    // Ensure that the X and Y matrices have the same number of samples.
+    if (X->n_rows != Y->n_rows) {
+        LAST_ERROR = "X and Y matrices must have same number of samples.";
+        return 0;
+    }
+
+    // Ensure that the dataset divides by the batch size.
+    if (X->n_rows % obj->n_samples) {
+        LAST_ERROR = "Dataset does not divide evenly over batch size.";
+        return 0;
+    }
+
+    int batch_n;
+
+    for (int epoch = 0; epoch < epochs; epoch++) {
+        batch_n = 0;
+        for (int batch_start = 0; batch_start < X->n_rows; batch_start += obj->n_samples) {
+            if (debug) {
+                printf("\33[2K\r");
+            }
+
+            // Copy the input data and Y values into the model.
+            memcpy(obj->input->buffer, X->buffer[batch_start * X->n_cols], sizeof(double) * X->n_cols * obj->n_samples);
+            memcpy(obj->y->buffer, Y->buffer[batch_start * Y->n_cols], sizeof(double) * Y->n_cols * obj->n_samples);
+
+            // Perform the forward pass over the network.
+            if (!model_forward(obj, true)) {
+                return 0;
+            }
+
+            // Perform the backward pass over the network.
+            if (!model_backward(obj)) {
+                return 0;
+            }
+
+            // Update each trainable layer's parameters.
+            if (!model_update(obj)) {
+                return 0;
+            }
+
+            if (debug) {
+                // Display the current batch.
+                printf("Training batch %d/%d...", batch_n, X->n_rows / batch_n);
+            }
+
+            batch_n++;
+        }
+
+        if (debug) {
+            // Display the epoch, loss, and accuracy.
+            double loss, acc = 
+        }
+    }
 
     return 1;
 }
@@ -594,5 +674,20 @@ int model_backward(struct model *obj) {
         current = current->prev;
     } while (current != NULL);
     
+    return 1;
+}
+
+// Update each trainable layer in the model.
+int model_update(struct model *obj) {
+    struct layer *current = obj->first;
+    do {
+        if (current->trainable) {
+            if (!layer_update(current)) {
+                return 0;
+            }
+        }
+        current = current->next;
+    } while (current != NULL);
+
     return 1;
 }

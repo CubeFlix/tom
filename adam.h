@@ -25,4 +25,4 @@ int optimizer_adam_init(struct optimizer_adam *obj, struct layer_dense *layer,
 void optimizer_adam_free(struct optimizer_adam *obj);
 
 // Update the layer's weights and biases.
-void optimizer_adam_update(struct optimizer_adam *obj, int epoch);
+void optimizer_adam_update(struct optimizer_adam *obj, int iter);

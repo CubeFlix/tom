@@ -34,11 +34,11 @@ void optimizer_sgd_free(struct optimizer_sgd *obj) {
 }
 
 // Update the layer's weights and biases.
-void optimizer_sgd_update(struct optimizer_sgd *obj, int epoch) {
+void optimizer_sgd_update(struct optimizer_sgd *obj, int iter) {
     // Calculate the learning rate.
     double learning_rate = obj->learning_rate;
     if (obj->decay) {
-        learning_rate = learning_rate * (1.0 / (1.0 + obj->decay * (double)epoch));
+        learning_rate = learning_rate * (1.0 / (1.0 + obj->decay * (double)iter));
     }
 
     if (obj->momentum) {

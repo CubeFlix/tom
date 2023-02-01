@@ -25,4 +25,4 @@ int optimizer_sgd_init(struct optimizer_sgd *obj, struct layer_dense *layer,
 void optimizer_sgd_free(struct optimizer_sgd *obj);
 
 // Update the layer's weights and biases.
-void optimizer_sgd_update(struct optimizer_sgd *obj, int epoch);
+void optimizer_sgd_update(struct optimizer_sgd *obj, int iter);
