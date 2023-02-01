@@ -146,8 +146,11 @@ int model_free(struct model *obj);
 // Add and initialize a layer.
 struct layer *model_add_layer(struct model *obj, enum layer_type type, int input_size, int output_size);
 
-// Add and initialize a conv 2D or max pooling layer.
+// Add and initialize a 2D conv or max pooling layer.
 int model_add_2d_layer(struct model *obj);
+
+// Set the layer's loss.
+void model_set_loss(struct model *obj, enum loss_type type) ;
 
 // Finalize and initialize the model.
 int model_finalize(struct model *obj);

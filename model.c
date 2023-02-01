@@ -17,6 +17,67 @@
 #include "crossentropy.h"
 #include "binary_crossentropy.h"
 
+// Initialize a layer object. The layer should have its type, input size, and 
+// output size set. Requires the input matrix and the gradients from the
+// previous layer. Initalizes the layer object itself, along with the output
+// matrix and output gradients.
+int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct matrix *d_prev) {
+    // Create the new output matrix.
+    struct matrix* current_output = calloc(1, sizeof(struct matrix));
+    if (!matrix_init(current_output, n_samples, obj->output_size)) {
+        return 0;
+    }
+
+    // Create the new gradient matrix.
+    struct matrix* current_gradient = calloc(1, sizeof(struct matrix));
+    if (!matrix_init(current_gradient, n_samples, obj->output_size)) {
+        return 0;
+    }
+
+    switch (obj->type) {
+    case LAYER_DENSE:;
+        // Initialize the dense layer.
+        struct layer_dense* dense = calloc(1, sizeof(struct layer_dense));
+        if (!layer_dense_init(dense, obj->input_size, obj->output_size, inputs, current_output, current_gradient, d_prev)) {
+            return 0;
+        }
+        obj->obj = dense;
+        break;
+    case LAYER_CONV2D:
+        break;
+    case LAYER_MAXPOOL2D:
+        break;
+    case LAYER_DROPOUT:
+        break;
+    case LAYER_SOFTMAX:;
+        // Initialize the softmax activation layer.
+        struct activation_softmax* softmax = calloc(1, sizeof(struct activation_softmax));
+        if (!activation_softmax_init(softmax, obj->input_size, inputs, current_output, current_gradient, d_prev)) {
+            return 0;
+        }
+        obj->obj = softmax;
+        break;
+    case LAYER_SIGMOID:
+        break;
+    case LAYER_RELU:
+        break;
+    default:
+        LAST_ERROR = "Invalid layer type.";
+        return 0;
+    }
+
+    // Set the values for the layer.
+    obj->input = inputs;
+    obj->output = current_output;
+    obj->d_output = current_gradient;
+    obj->d_input = d_prev;
+
+    return 1;
+}
+
+
+// Initialize the layer values.
+
 // Initialize an optimizer on the layer.
 int layer_init_optimizer(struct layer *obj) {
 
@@ -58,10 +119,45 @@ int layer_free(struct layer *obj) {
         if (!optimizer_free(obj->opt)) {
             return 0;
         }
+        free(obj->opt);
     }
 
-    // Free ourselves.
-    free(obj);
+    return 1;
+}
+
+// Initialize the loss object. The type should already be set. Requires the 
+// input, y, and output matrices, along with the input gradients.
+int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
+              struct matrix* output, struct matrix* d_input) {
+    // Set the loss values.
+    obj->input = input;
+    obj->y = y;
+    obj->output = output;
+    obj->d_input = d_input;
+    
+    switch (obj->loss.type) {
+    case LOSS_MSE:;
+        // Initialize the MSE loss.
+        struct loss_mse* mse = calloc(1, sizeof(struct loss_mse));
+        if (!loss_mse_init(mse, output->n_cols, input, y, output, d_input)) {
+            return 0;
+        }
+        obj->obj = mse;
+        break;
+    case LOSS_CROSSENTROPY:
+        // Initialize the crossentropy loss.
+        struct loss_crossentropy* crossentropy = calloc(1, sizeof(struct loss_crossentropy));
+        if (!loss_crossentropy_init(crossentropy, output->n_cols, input, y, output, d_input)) {
+            return 0;
+        }
+        obj->obj = crossentropy;
+        break;
+    case LOSS_BINARY_CROSSENTROPY:
+        break;
+    default:
+        LAST_ERROR = "Invalid loss type.";
+        return 0;
+    }
 
     return 1;
 }
@@ -97,9 +193,6 @@ int optimizer_free(struct optimizer *obj) {
             LAST_ERROR = "Invalid optimizer type.";
             return 0;
     }
-
-    // Free ourselves.
-    free(obj);
 
     return 1;
 }
@@ -164,6 +257,7 @@ int model_free(struct model *obj) {
         if (!layer_free(current)) {
             return 0;
         }
+        free(current);
         current = next;
     } while (current != NULL);
 
@@ -225,51 +319,16 @@ int model_finalize(struct model *obj) {
     // Initialize each layer.
     struct layer *current = obj->first;
     do {
-        // Create the new output matrix.
-        struct matrix *current_output = calloc(1, sizeof(struct matrix));
-
-        // Create the new gradient matrix.
-        struct matrix *current_gradient = calloc(1, sizeof(struct matrix));
-
-        switch (current->type) {
-            case LAYER_DENSE:
-                // Initialize the dense layer.
-                struct layer_dense *dense = calloc(1, sizeof(struct layer_dense));
-                if (!matrix_init(current_output, obj->n_samples, current->output_size)) {
-                    return 0;
-                }
-                if (!matrix_init(current_gradient, obj->n_samples, current->output_size)) {
-                    return 0;
-                }
-                if (!layer_dense_init(dense, current->input_size, current->output_size, obj->output, current_output, current_gradient, obj->last_gradient)) {
-                    return 0;
-                }
-
-                // Set the values for the layer.
-                current->obj = dense;
-                current->input = obj->output;
-                current->output = current_output;
-                current->d_output = current_gradient;
-                current->d_input = obj->last_gradient;
-                obj->output = current_output;
-                obj->last_gradient = current_gradient;
-                break;
-            case LAYER_CONV2D:
-                break;
-            case LAYER_MAXPOOL2D:
-                break;
-            case LAYER_DROPOUT:
-                break;
-            case LAYER_SOFTMAX:
-                break;
-            case LAYER_SIGMOID:
-                break;
-            case LAYER_RELU:
-                break;
-            default:
-                LAST_ERROR = "Invalid layer type.";
-                return 0;
+        // Initialize the layer.
+        if (!layer_init(current, obj->n_samples, obj->output, obj->last_gradient)) {
+            return 0;
         }
+
+        // Set the output and last gradient matricies.
+        obj->output = current->output;
+        obj->last_gradient = current->d_output;
+
+        // Continue onto the next layer.
         current = current->next;
     } while (current != NULL);
 
@@ -286,24 +345,16 @@ int model_finalize(struct model *obj) {
     }
 
     // Initialize the loss.
-    obj->loss.d_input = obj->last_gradient;
-    obj->loss.input = obj->output;
-    obj->loss.output = obj->loss_output;
-    switch (obj->loss.type) {
-        case LOSS_MSE:
-            struct loss_mse *mse = calloc(1, sizeof(struct loss_mse));
-            obj->loss.obj = mse;
-            if (!loss_mse_init(mse, obj->output->n_cols, obj->loss.input, obj->y, obj->loss.output, obj->loss.d_input)) {
-                return 0;
-            }
-            break;
-        case LOSS_CROSSENTROPY:
-            break;
-        case LOSS_BINARY_CROSSENTROPY:
-            break;
-        default:
-            LAST_ERROR = "Invalid loss type.";
+    if (obj->loss.type == LOSS_CROSSENTROPY && obj->last->type == LAYER_SOFTMAX) {
+        // The loss should use the crossentropy softmax backward pass.
+        if (!loss_init(&obj->loss, obj->output, obj->y, obj->loss_output, obj->last->d_input)) {
             return 0;
+        }
+    } else {
+        // Initialize the loss normally.
+        if (!loss_init(&obj->loss, obj->output, obj->y, obj->loss_output, obj->last_gradient)) {
+            return 0;
+        }
     }
 
     return 1;
