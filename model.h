@@ -4,11 +4,34 @@
 #ifndef MODEL_H
 #define MODEL_H
 
+#include <stdbool.h>
+
 #include "matrix.h"
 
 extern char *LAST_ERROR;
 
 #define IS_CROSSENTROPY_SOFTMAX(obj) (obj->loss.type == LOSS_CROSSENTROPY && obj->last->type == LAYER_SOFTMAX)
+
+// Optimizer type enum.
+enum optimizer_type {
+    // Stochastic gradient descent.
+    OPTIMIZER_SGD,
+
+    // Adam optimizer.
+    OPTIMIZER_ADAM
+};
+
+// The generic optimizer object.
+struct optimizer {
+    // The optimizer type.
+    enum optimizer_type type;
+
+    // The optimizer object.
+    void* obj;
+};
+
+// Free an optimizer object.
+int optimizer_free(struct optimizer* obj);
 
 // Layer type enum.
 enum layer_type {
@@ -45,8 +68,11 @@ struct layer {
     // The layer object.
     void *obj;
 
+    // If the layer is trainable.
+    bool trainable;
+
     // The (optional) optimizer.
-    struct optimizer *opt;
+    struct optimizer opt;
 
     // Matrices for the layer. We store the input and output matrices, along
     // with the input and output gradients.
@@ -56,9 +82,6 @@ struct layer {
     // The input and output size.
     int input_size, output_size;
 };
-
-// Initialize an optimizer on the layer.
-int layer_init_optimizer(struct layer *obj);
 
 // Free the layer, along with its matrices and optimizer. If a matrix is 
 // already freed or not initialized, it will be skipped.
@@ -93,27 +116,6 @@ struct loss {
 
 // Free the loss object.
 int loss_free(struct loss *obj);
-
-// Optimizer type enum.
-enum optimizer_type {
-    // Stochastic gradient descent.
-    OPTIMIZER_SGD,
-
-    // Adam optimizer.
-    OPTIMIZER_ADAM
-};
-
-// The generic optimizer object.
-struct optimizer {
-    // The optimizer type.
-    enum optimizer_type type;
-
-    // The optimizer object.
-    void *obj;
-};
-
-// Free an optimizer object.
-int optimizer_free(struct optimizer *obj);
 
 // The model object.
 struct model {
@@ -157,5 +159,14 @@ void model_set_loss(struct model *obj, enum loss_type type) ;
 
 // Finalize and initialize the model.
 int model_finalize(struct model *obj);
+
+// Initialize optimizers on the model.
+int model_init_optimizers(struct model *obj, enum optimizer_type type, ...);
+
+// Perform a backward pass on the model.
+int model_backward(struct model *obj);
+
+// Perform a backward pass on the model.
+int model_backward(struct model *obj);
 
 #endif

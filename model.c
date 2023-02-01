@@ -2,7 +2,8 @@
 // Network model object.
 
 #include <stdlib.h>
-#include <stdio.h> // TODO: remove debug
+#include <stdarg.h>
+#include <stdbool.h>
 
 #include "model.h"
 #include "matrix.h"
@@ -25,12 +26,14 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
     // Create the new output matrix.
     struct matrix* current_output = calloc(1, sizeof(struct matrix));
     if (!matrix_init(current_output, n_samples, obj->output_size)) {
+        free(current_output);
         return 0;
     }
 
     // Create the new gradient matrix.
     struct matrix* current_gradient = calloc(1, sizeof(struct matrix));
     if (!matrix_init(current_gradient, n_samples, obj->output_size)) {
+        free(current_gradient);
         return 0;
     }
 
@@ -39,11 +42,14 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         // Initialize the dense layer.
         struct layer_dense* dense = calloc(1, sizeof(struct layer_dense));
         if (!layer_dense_init(dense, obj->input_size, obj->output_size, inputs, current_output, current_gradient, d_prev)) {
+            free(dense);
             return 0;
         }
+        obj->trainable = true;
         obj->obj = dense;
         break;
     case LAYER_CONV2D:
+        obj->trainable = true;
         break;
     case LAYER_MAXPOOL2D:
         break;
@@ -53,6 +59,7 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         // Initialize the softmax activation layer.
         struct activation_softmax* softmax = calloc(1, sizeof(struct activation_softmax));
         if (!activation_softmax_init(softmax, obj->input_size, inputs, current_output, current_gradient, d_prev)) {
+            free(softmax);
             return 0;
         }
         obj->obj = softmax;
@@ -75,12 +82,45 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
     return 1;
 }
 
-// Initialize the layer values.
-int layer_init_values
+// Initialize the layer's optimizer. Requires an optimizer type and variable
+// args list, which will be used by the function.
+int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap) {
+    obj->opt.type = type;
 
-// Initialize an optimizer on the layer.
-int layer_init_optimizer(struct layer *obj) {
+    switch (obj->type) {
+    case LAYER_DENSE:
+        switch (type) {
+        case OPTIMIZER_SGD:;
+            // Stochastic gradient descent.
+            struct optimizer_sgd* sgd = calloc(1, sizeof(struct optimizer_sgd));
+            obj->opt.obj = sgd;
+            if (!optimizer_sgd_init(sgd, obj->obj, va_arg(ap, double), va_arg(ap, double), va_arg(ap, double))) {
+                free(sgd);
+                return 0;
+            }
+            break;
+        case OPTIMIZER_ADAM:;
+            // Adam.
+            struct optimizer_adam* adam = calloc(1, sizeof(struct optimizer_adam));
+            obj->opt.obj = adam;
+            if (!optimizer_adam_init(adam, obj->obj, va_arg(ap, double), va_arg(ap, double), va_arg(ap, double), va_arg(ap, double), va_arg(ap, double))) {
+                free(adam);
+                return 0;
+            }
+            break;
+        default:
+            LAST_ERROR = "Invalid optimizer type.";
+            return 0;
+        }
+        break;
+    case LAYER_CONV2D:
+        break;
+    default:
+        LAST_ERROR = "Layer is untrainable; cannot initialize optimizer.";
+        return 0;
+    }
 
+    return 1;
 }
 
 // Perform a forward pass on the layer.
@@ -174,12 +214,9 @@ int layer_free(struct layer *obj) {
     // Free the layer itself.
     free(obj->obj);
 
-    // If we have an optimizer, free it.
-    if (obj->opt != NULL) {
-        if (!optimizer_free(obj->opt)) {
-            return 0;
-        }
-        free(obj->opt);
+    // Free the optimizer.
+    if (!optimizer_free(&obj->opt)) {
+        return 0;
     }
 
     return 1;
@@ -200,6 +237,7 @@ int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
         // Initialize the MSE loss.
         struct loss_mse *mse = calloc(1, sizeof(struct loss_mse));
         if (!loss_mse_init(mse, input->n_cols, input, y, output, d_input)) {
+            free(mse);
             return 0;
         }
         obj->obj = mse;
@@ -208,17 +246,19 @@ int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
         // Initialize the crossentropy loss.
         struct loss_crossentropy *crossentropy = calloc(1, sizeof(struct loss_crossentropy));
         if (!loss_crossentropy_init(crossentropy, input->n_cols, input, y, output, d_input)) {
+            free(crossentropy);
             return 0;
         }
         obj->obj = crossentropy;
         break;
-    case LOSS_BINARY_CROSSENTROPY:
+    case LOSS_BINARY_CROSSENTROPY:;
         // Initialize the binary crossentropy loss.
         struct loss_binary_crossentropy *binary_crossentropy = calloc(1, sizeof(struct loss_binary_crossentropy));
         if (!loss_binary_crossentropy_init(binary_crossentropy, input->n_cols, input, y, output, d_input)) {
+            free(binary_crossentropy);
             return 0;
         }
-        obj->obj = loss_binary_crossentropy;
+        obj->obj = binary_crossentropy;
         break;
     default:
         LAST_ERROR = "Invalid loss type.";
@@ -290,15 +330,22 @@ int loss_free(struct loss *obj) {
 
 // Free an optimizer object.
 int optimizer_free(struct optimizer *obj) {
-    switch (obj->type) {
+    if (obj->obj != NULL) {
+        switch (obj->type) {
         case OPTIMIZER_SGD:
             optimizer_sgd_free((struct optimizer_sgd*)(obj->obj));
+            break;
         case OPTIMIZER_ADAM:
-            optimizer_adam_free((struct optimizer_adam*)obj->obj);
+            optimizer_adam_free((struct optimizer_adam*)(obj->obj));
+            break;
         default:
             LAST_ERROR = "Invalid optimizer type.";
             return 0;
+        }
     }
+
+    // Free the optimizer itself.
+    free(obj->obj);
 
     return 1;
 }
@@ -412,6 +459,7 @@ int model_finalize(struct model *obj) {
     // Initialize the input matrix.
     obj->input = calloc(1, sizeof(struct matrix));
     if (!matrix_init(obj->input, obj->n_samples, obj->first->input_size)) {
+        free(obj->input);
         return 0;
     }
     obj->output = obj->input;
@@ -419,6 +467,7 @@ int model_finalize(struct model *obj) {
     // Initialize the gradients on the first layer.
     obj->last_gradient = calloc(1, sizeof(struct matrix));
     if (!matrix_init(obj->last_gradient, obj->n_samples, obj->first->input_size)) {
+        free(obj->last_gradient);
         return 0;
     }
     
@@ -441,12 +490,14 @@ int model_finalize(struct model *obj) {
     // Initialize the y matrix.
     obj->y = calloc(1, sizeof(struct matrix));
     if (!matrix_init(obj->y, obj->n_samples, obj->output->n_cols)) {
+        free(obj->y);
         return 0;
     }
 
     // Initialize the loss output.
     obj->loss_output = calloc(1, sizeof(struct matrix));
     if (!matrix_init(obj->loss_output, obj->n_samples, 1)) {
+        free(obj->loss_output);
         return 0;
     }
 
@@ -462,6 +513,47 @@ int model_finalize(struct model *obj) {
             return 0;
         }
     }
+
+    return 1;
+}
+
+// Initialize optimizers on the model.
+int model_init_optimizers(struct model* obj, enum optimizer_type type, ...) {
+    int n_args;
+    va_list ap;
+
+    // Get the number of arguments.
+    switch (type) {
+    case OPTIMIZER_SGD:
+        n_args = 3;
+        break;
+    case OPTIMIZER_ADAM:
+        n_args = 5;
+        break;
+    default:
+        LAST_ERROR = "Invalid optimizer type.";
+        return 0;
+    }
+
+    va_start(ap, n_args);
+
+    // Loop over each layer.
+    struct layer* current = obj->first;
+    do {
+        if (current->trainable) {
+            // Make a copy of the arguments.
+            va_list ap_copy;
+            va_copy(ap_copy, ap);
+
+            // Initialize the optimizer.
+            if (!layer_init_optimizer(current, type, ap_copy)) {
+                return 0;
+            }
+        }
+        current = current->next;
+    } while (current != NULL);
+
+    va_end(ap);
 
     return 1;
 }
@@ -490,7 +582,7 @@ int model_backward(struct model *obj) {
 
     // Perform the backward pass through each layer.
     struct layer *current = obj->last;
-    if (LOSS_CROSSENTROPY_SOFTMAX(obj)) {
+    if (IS_CROSSENTROPY_SOFTMAX(obj)) {
         // Skip the softmax layer.
         current = current->prev;
     }
