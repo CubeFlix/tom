@@ -8,6 +8,8 @@
 
 extern char *LAST_ERROR;
 
+#define IS_CROSSENTROPY_SOFTMAX(obj) (obj->loss.type == LOSS_CROSSENTROPY && obj->last->type == LAYER_SOFTMAX)
+
 // Layer type enum.
 enum layer_type {
     // Dense layer.

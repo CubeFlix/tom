@@ -80,6 +80,7 @@ void layer_dropout_forward(struct layer_dropout *obj) {
 // Perform a forward pass on the layer, without applying dropout.
 void layer_dropout_forward_predict(struct layer_dropout *obj) {
     for (int i = 0; i < obj->mask.size; i++) {
+        obj->mask.buffer[i] = 1.0;
         obj->output->buffer[i] = obj->input->buffer[i];
     }
 }

@@ -2,7 +2,7 @@
 // Network model object.
 
 #include <stdlib.h>
-#include <stdio.h>
+#include <stdio.h> // TODO: remove debug
 
 #include "model.h"
 #include "matrix.h"
@@ -75,8 +75,8 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
     return 1;
 }
 
-
 // Initialize the layer values.
+int layer_init_values
 
 // Initialize an optimizer on the layer.
 int layer_init_optimizer(struct layer *obj) {
@@ -84,12 +84,62 @@ int layer_init_optimizer(struct layer *obj) {
 }
 
 // Perform a forward pass on the layer.
-int layer_forward(struct layer *obj) {
+int layer_forward(struct layer *obj, bool training) {
+    switch (obj->type) {
+    case LAYER_DENSE:;
+        layer_dense_forward(obj->obj);
+        break;
+    case LAYER_CONV2D:
+        break;
+    case LAYER_MAXPOOL2D:
+        break;
+    case LAYER_DROPOUT:
+        if (training) {
+            layer_dropout_forward(obj->obj);
+        } else {
+            layer_dropout_forward_predict(obj->obj);
+        }
+        break;
+    case LAYER_SOFTMAX:
+        // Initialize the softmax activation layer.
+        activation_softmax_forward_stable(obj->obj);
+        break;
+    case LAYER_SIGMOID:
+        break;
+    case LAYER_RELU:
+        break;
+    default:
+        LAST_ERROR = "Invalid layer type.";
+        return 0;
+    }
     return 1;
 }
 
 // Perform a backward pass on the layer.
 int layer_backward(struct layer *obj) {
+    switch (obj->type) {
+    case LAYER_DENSE:;
+        layer_dense_backward(obj->obj);
+        break;
+    case LAYER_CONV2D:
+        break;
+    case LAYER_MAXPOOL2D:
+        break;
+    case LAYER_DROPOUT:
+        layer_dropout_backward(obj->obj);
+        break;
+    case LAYER_SOFTMAX:
+        // Initialize the softmax activation layer.
+        activation_softmax_backward(obj->obj);
+        break;
+    case LAYER_SIGMOID:
+        break;
+    case LAYER_RELU:
+        break;
+    default:
+        LAST_ERROR = "Invalid layer type.";
+        return 0;
+    }
     return 1;
 }
 
@@ -148,7 +198,7 @@ int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
     switch (obj->type) {
     case LOSS_MSE:;
         // Initialize the MSE loss.
-        struct loss_mse* mse = calloc(1, sizeof(struct loss_mse));
+        struct loss_mse *mse = calloc(1, sizeof(struct loss_mse));
         if (!loss_mse_init(mse, input->n_cols, input, y, output, d_input)) {
             return 0;
         }
@@ -156,13 +206,59 @@ int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
         break;
     case LOSS_CROSSENTROPY:;
         // Initialize the crossentropy loss.
-        struct loss_crossentropy* crossentropy = calloc(1, sizeof(struct loss_crossentropy));
+        struct loss_crossentropy *crossentropy = calloc(1, sizeof(struct loss_crossentropy));
         if (!loss_crossentropy_init(crossentropy, input->n_cols, input, y, output, d_input)) {
             return 0;
         }
         obj->obj = crossentropy;
         break;
     case LOSS_BINARY_CROSSENTROPY:
+        // Initialize the binary crossentropy loss.
+        struct loss_binary_crossentropy *binary_crossentropy = calloc(1, sizeof(struct loss_binary_crossentropy));
+        if (!loss_binary_crossentropy_init(binary_crossentropy, input->n_cols, input, y, output, d_input)) {
+            return 0;
+        }
+        obj->obj = loss_binary_crossentropy;
+        break;
+    default:
+        LAST_ERROR = "Invalid loss type.";
+        return 0;
+    }
+
+    return 1;
+}
+
+// Perform a forward pass on the loss.
+int loss_forward(struct loss *obj) {
+    switch (obj->type) {
+    case LOSS_MSE:
+        loss_mse_forward(obj->obj);
+        break;
+    case LOSS_CROSSENTROPY:
+        loss_crossentropy_forward(obj->obj);
+        break;
+    case LOSS_BINARY_CROSSENTROPY:
+        loss_binary_crossentropy_forward(obj->obj);
+        break;
+    default:
+        LAST_ERROR = "Invalid loss type.";
+        return 0;
+    }
+
+    return 1;
+}
+
+// Perform a backward pass on the loss.
+int loss_backward(struct loss *obj) {
+    switch (obj->type) {
+    case LOSS_MSE:
+        loss_mse_backward(obj->obj);
+        break;
+    case LOSS_CROSSENTROPY:
+        loss_crossentropy_backward(obj->obj);
+        break;
+    case LOSS_BINARY_CROSSENTROPY:
+        loss_binary_crossentropy_backward(obj->obj);
         break;
     default:
         LAST_ERROR = "Invalid loss type.";
@@ -355,7 +451,7 @@ int model_finalize(struct model *obj) {
     }
 
     // Initialize the loss.
-    if (obj->loss.type == LOSS_CROSSENTROPY && obj->last->type == LAYER_SOFTMAX) {
+    if (IS_CROSSENTROPY_SOFTMAX(obj)) {
         // The loss should use the crossentropy softmax backward pass.
         if (!loss_init(&obj->loss, obj->output, obj->y, obj->loss_output, obj->last->d_input)) {
             return 0;
@@ -367,5 +463,44 @@ int model_finalize(struct model *obj) {
         }
     }
 
+    return 1;
+}
+
+// Perform a forward pass on the entire model.
+int model_forward(struct model *obj, bool training) {
+    // Perform the forward pass through each layer.
+    struct layer *current = obj->first;
+    do {
+        if (!layer_forward(current, training)) {
+            return 0;
+        }
+        current = current->next;
+    } while (current != NULL);
+
+    // Perform the forward pass through the loss.
+    return loss_forward(&obj->loss);
+}
+
+// Perform a backward pass on the model.
+int model_backward(struct model *obj) {
+    // Perform the backward pass through the loss.
+    if (!loss_backward(&obj->loss)) {
+        return 0;
+    }
+
+    // Perform the backward pass through each layer.
+    struct layer *current = obj->last;
+    if (LOSS_CROSSENTROPY_SOFTMAX(obj)) {
+        // Skip the softmax layer.
+        current = current->prev;
+    }
+
+    do {
+        if (!layer_backward(current)) {
+            return 0;
+        }
+        current = current->prev;
+    } while (current != NULL);
+    
     return 1;
 }
