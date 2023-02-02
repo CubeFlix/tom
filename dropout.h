@@ -30,6 +30,9 @@ int layer_dropout_init(struct layer_dropout *obj, int input_size,
                       struct matrix *output, struct matrix *d_outputs, 
                       struct matrix *d_inputs);
 
+// Set the dropout layer's rate.
+void layer_dropout_set_rate(struct layer_dropout *obj, double rate);
+
 // Free the matrices owned by the layer.
 void layer_dropout_free(struct layer_dropout *obj);
 

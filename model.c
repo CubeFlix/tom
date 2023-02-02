@@ -14,6 +14,7 @@
 #include "conv2d.h"
 #include "maxpool2d.h"
 #include "dropout.h"
+#include "sigmoid.h"
 #include "softmax.h"
 #include "relu.h"
 #include "sgd.h"
@@ -24,7 +25,7 @@
 
 // Initialize a layer object. The layer should have its type, input size, and 
 // output size set. Requires the input matrix and the gradients from the
-// previous layer. Initalizes the layer object itself, along with the output
+// previous layer. Initializes the layer object itself, along with the output
 // matrix and output gradients.
 int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct matrix *d_prev) {
     // Create the new output matrix.
@@ -55,12 +56,22 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         break;
     }
     case LAYER_CONV2D:
+    // TODO: conv layers
         obj->trainable = true;
         break;
     case LAYER_MAXPOOL2D:
         break;
     case LAYER_DROPOUT:
+    {
+        // Initialize the dropout layer.
+        struct layer_dropout *dropout = calloc(1, sizeof(struct layer_dropout));
+        if (!layer_dropout_init(dropout, obj->input_size, 0.0, inputs, current_output, current_gradient, d_prev)) {
+            free(dropout);
+            return 0;
+        }
+        obj->obj = dropout;
         break;
+    }
     case LAYER_SOFTMAX:
     {
         // Initialize the softmax activation layer.
@@ -73,7 +84,16 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         break;
     }
     case LAYER_SIGMOID:
+    {
+        // Initialize the sigmoid activation layer.
+        struct activation_sigmoid* sigmoid = calloc(1, sizeof(struct activation_sigmoid));
+        if (!activation_sigmoid_init(sigmoid, obj->input_size, inputs, current_output, current_gradient, d_prev)) {
+            free(sigmoid);
+            return 0;
+        }
+        obj->obj = sigmoid;
         break;
+    }
     case LAYER_RELU:
     {
         // Initialize the RELU activation layer.
@@ -146,6 +166,7 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap
         }
         break;
     case LAYER_CONV2D:
+        // TODO: conv layers
         break;
     default:
         LAST_ERROR = "Layer is untrainable; cannot initialize optimizer.";
@@ -158,12 +179,14 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap
 // Perform a forward pass on the layer.
 int layer_forward(struct layer *obj, bool training) {
     switch (obj->type) {
-    case LAYER_DENSE:;
+    case LAYER_DENSE:
         layer_dense_forward(obj->obj);
         break;
     case LAYER_CONV2D:
+        layer_conv2d_forward(obj->obj);
         break;
     case LAYER_MAXPOOL2D:
+        layer_maxpool2d_forward(obj->obj);
         break;
     case LAYER_DROPOUT:
         if (training) {
@@ -176,6 +199,7 @@ int layer_forward(struct layer *obj, bool training) {
         activation_softmax_forward_stable(obj->obj);
         break;
     case LAYER_SIGMOID:
+        activation_sigmoid_forward(obj->obj);
         break;
     case LAYER_RELU:
         activation_relu_forward(obj->obj);
@@ -190,12 +214,14 @@ int layer_forward(struct layer *obj, bool training) {
 // Perform a backward pass on the layer.
 int layer_backward(struct layer *obj) {
     switch (obj->type) {
-    case LAYER_DENSE:;
+    case LAYER_DENSE:
         layer_dense_backward(obj->obj);
         break;
     case LAYER_CONV2D:
+        layer_conv2d_backward(obj->obj);
         break;
     case LAYER_MAXPOOL2D:
+        layer_maxpool2d_backward(obj->obj);
         break;
     case LAYER_DROPOUT:
         layer_dropout_backward(obj->obj);
@@ -204,6 +230,7 @@ int layer_backward(struct layer *obj) {
         activation_softmax_backward(obj->obj);
         break;
     case LAYER_SIGMOID:
+        activation_sigmoid_backward(obj->obj);
         break;
     case LAYER_RELU:
         activation_relu_backward(obj->obj);
@@ -263,6 +290,7 @@ int layer_free(struct layer *obj) {
             }
             break;
         case LAYER_CONV2D:
+            // TODO: conv layers
             break;
         default:
             LAST_ERROR = "Layer is untrainable; cannot free optimizer.";
@@ -294,6 +322,7 @@ int layer_update(struct layer* obj) {
             }
             break;
         case LAYER_CONV2D:
+            // TODO: conv layers
             break;
         default:
             LAST_ERROR = "Layer is untrainable; cannot update optimizer.";
@@ -301,6 +330,7 @@ int layer_update(struct layer* obj) {
         }
     }
 
+    // Increment optimizer iteration.
     obj->opt.iter++;
 
     return 1;
@@ -547,7 +577,7 @@ int model_finalize(struct model *obj) {
             return 0;
         }
 
-        // Set the output and last gradient matricies.
+        // Set the output and last gradient matrices.
         obj->output = current->output;
         obj->last_gradient = current->d_output;
 
@@ -611,7 +641,7 @@ int model_init_optimizers(struct model* obj, enum optimizer_type type, ...) {
     return 1;
 }
 
-// Perdict. Takes an input and output matrix with any number of samples.
+// Predict. Takes an input and output matrix with any number of samples.
 int model_predict(struct model* obj, struct matrix* X, struct matrix* Y) {
     // Ensure that the X and Y matrices have the same number of samples.
     if (X->n_rows != Y->n_rows) {
@@ -619,9 +649,6 @@ int model_predict(struct model* obj, struct matrix* X, struct matrix* Y) {
         return 0;
     }
     
-    // Calculate number of batches.
-    int n_batches = (X->n_rows + obj->n_samples - 1) / obj->n_samples;
-
     // Loop over each batch.
     int current_batch_size = obj->n_samples;
     for (int batch_start = 0; batch_start < X->n_rows; batch_start += obj->n_samples) {
@@ -629,7 +656,17 @@ int model_predict(struct model* obj, struct matrix* X, struct matrix* Y) {
         if (batch_start + obj->n_samples >= X->n_rows) {
             current_batch_size = X->n_rows - batch_start;
         }
-        // i.e. 5 samples, bs 3
+
+        // Copy the input data into the model.
+        memcpy(obj->input->buffer, (void*)&X->buffer[batch_start * X->n_cols], sizeof(double) * X->n_cols * current_batch_size);
+
+        // Perform the forward pass over the network.
+        if (!model_forward(obj, false)) {
+            return 0;
+        }
+
+        // Copy the output data to the matrix.
+        memcpy((void*)&Y[batch_start * Y->n_cols], obj->output->buffer, sizeof(double) * Y->n_cols * current_batch_size);
     }
     
     return 1;
