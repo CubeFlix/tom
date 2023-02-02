@@ -99,23 +99,33 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap
     obj->opt.type = type;
     obj->opt.iter = 0;
 
+    double lr, mom, dec, b1, b2, eps;
+
     switch (obj->type) {
     case LAYER_DENSE:
         switch (type) {
         case OPTIMIZER_SGD:;
             // Stochastic gradient descent.
+            lr = va_arg(ap, double);
+            mom = va_arg(ap, double);
+            dec = va_arg(ap, double);
             struct optimizer_sgd* sgd = calloc(1, sizeof(struct optimizer_sgd));
             obj->opt.obj = sgd;
-            if (!optimizer_sgd_init(sgd, obj->obj, va_arg(ap, double), va_arg(ap, double), va_arg(ap, double))) {
+            if (!optimizer_sgd_init(sgd, obj->obj, lr, mom, dec)) {
                 free(sgd);
                 return 0;
             }
             break;
         case OPTIMIZER_ADAM:;
             // Adam.
+            lr = va_arg(ap, double);
+            b1 = va_arg(ap, double);
+            b2 = va_arg(ap, double);
+            dec = va_arg(ap, double);
+            eps = va_arg(ap, double);
             struct optimizer_adam* adam = calloc(1, sizeof(struct optimizer_adam));
             obj->opt.obj = adam;
-            if (!optimizer_adam_init(adam, obj->obj, va_arg(ap, double), va_arg(ap, double), va_arg(ap, double), va_arg(ap, double), va_arg(ap, double))) {
+            if (!optimizer_adam_init(adam, obj->obj, lr, b1, b2, dec, eps)) {
                 free(adam);
                 return 0;
             }
@@ -692,8 +702,12 @@ int model_forward(struct model *obj, bool training) {
 // Perform a backward pass on the model.
 int model_backward(struct model *obj) {
     // Perform the backward pass through the loss.
-    if (!loss_backward(&obj->loss)) {
-        return 0;
+    if (IS_CROSSENTROPY_SOFTMAX(obj)) {
+        loss_crossentropy_backward_softmax(obj->loss.obj);
+    } else {
+        if (!loss_backward(&obj->loss)) {
+            return 0;
+        }
     }
 
     // Perform the backward pass through each layer.
