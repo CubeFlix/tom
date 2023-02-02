@@ -17,7 +17,7 @@ struct optimizer_sgd {
     struct matrix weight_m, bias_m;
 };
 
-// Initialize an empty SGD optimizer object..
+// Initialize an empty SGD optimizer object.
 int optimizer_sgd_init(struct optimizer_sgd *obj, struct layer_dense *layer, 
                        double learning_rate, double momentum, double decay);
 

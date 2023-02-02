@@ -1,4 +1,8 @@
 *.exe
 *.exe.stackdump
 *.un~
+*.obj
 *.dat
+*~
+*.log
+.vs

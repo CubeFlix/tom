@@ -13,9 +13,12 @@ a neural network written in c. see `mnist_test.c` for usage example.
 - [x] convolution
 - [x] pooling
 - [x] optimization with multiplication over division
+- [ ] cmake
 - [ ] more activations and functions
-- [ ] optimizers for conv2d layers
-- [ ] model object
+- [x] optimizers for conv2d layers
+- [x] model object
+- [ ] mnist, iris, conv tests
+- [ ] misc functions
 - [ ] cifar?
 - [ ] rnn?
 - [ ] clean

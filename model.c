@@ -19,6 +19,8 @@
 #include "relu.h"
 #include "sgd.h"
 #include "adam.h"
+#include "sgd_conv2d.h"
+#include "adam_conv2d.h"
 #include "mse.h"
 #include "crossentropy.h"
 #include "binary_crossentropy.h"
@@ -27,7 +29,8 @@
 // output size set. Requires the input matrix and the gradients from the
 // previous layer. Initializes the layer object itself, along with the output
 // matrix and output gradients.
-int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct matrix *d_prev) {
+int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, 
+               struct matrix *d_prev) {
     // Create the new output matrix.
     struct matrix* current_output = calloc(1, sizeof(struct matrix));
     if (!matrix_init(current_output, n_samples, obj->output_size)) {
@@ -56,14 +59,31 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         break;
     }
     case LAYER_CONV2D:
-    // TODO: conv layers
+    {
+        // Initialize the conv 2D layer.
+        struct layer_conv2d* conv2d = calloc(1, sizeof(struct layer_conv2d));
+        if (!layer_conv2d_init(conv2d, obj->input_channels, obj->input_height, obj->input_width, obj->output_channels, obj->filter_size, obj->stride, inputs, current_output, current_gradient, d_prev)) {
+            free(conv2d);
+            return 0;
+        }
         obj->trainable = true;
+        obj->obj = conv2d;
         break;
+    }
     case LAYER_MAXPOOL2D:
+    {
+        // Initialize the max pooling 2D layer.
+        struct layer_maxpool2d* maxpool2d = calloc(1, sizeof(struct layer_maxpool2d));
+        if (!layer_maxpool2d_init(maxpool2d, obj->input_channels, obj->input_height, obj->input_width, obj->filter_size, obj->stride, inputs, current_output, current_gradient, d_prev)) {
+            free(maxpool2d);
+            return 0;
+        }
+        obj->obj = maxpool2d;
         break;
+    }
     case LAYER_DROPOUT:
     {
-        // Initialize the dropout layer.
+        // Initialize the dropout layer. Uses a default mask of 0.0.
         struct layer_dropout *dropout = calloc(1, sizeof(struct layer_dropout));
         if (!layer_dropout_init(dropout, obj->input_size, 0.0, inputs, current_output, current_gradient, d_prev)) {
             free(dropout);
@@ -121,7 +141,8 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
 
 // Initialize the layer's optimizer. Requires an optimizer type and variable
 // args list, which will be used by the function.
-int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap) {
+int layer_init_optimizer(struct layer* obj, enum optimizer_type type, 
+                         va_list ap) {
     obj->opt.type = type;
     obj->opt.iter = 0;
 
@@ -166,7 +187,43 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap
         }
         break;
     case LAYER_CONV2D:
-        // TODO: conv layers
+        switch (type) {
+        case OPTIMIZER_SGD:
+        {
+            // Stochastic gradient descent.
+            double lr, mom, dec;
+            lr = va_arg(ap, double);
+            mom = va_arg(ap, double);
+            dec = va_arg(ap, double);
+            struct optimizer_sgd_conv2d* sgd = calloc(1, sizeof(struct optimizer_sgd_conv2d));
+            obj->opt.obj = sgd;
+            if (!optimizer_sgd_conv2d_init(sgd, obj->obj, lr, mom, dec)) {
+                free(sgd);
+                return 0;
+            }
+            break;
+        }
+        case OPTIMIZER_ADAM:
+        {
+            // Adam.
+            double lr, b1, b2, dec, eps;
+            lr = va_arg(ap, double);
+            b1 = va_arg(ap, double);
+            b2 = va_arg(ap, double);
+            dec = va_arg(ap, double);
+            eps = va_arg(ap, double);
+            struct optimizer_adam_conv2d* adam = calloc(1, sizeof(struct optimizer_adam_conv2d));
+            obj->opt.obj = adam;
+            if (!optimizer_adam_conv2d_init(adam, obj->obj, lr, b1, b2, dec, eps)) {
+                free(adam);
+                return 0;
+            }
+            break;
+        }
+        default:
+            LAST_ERROR = "Invalid optimizer type.";
+            return 0;
+        }
         break;
     default:
         LAST_ERROR = "Layer is untrainable; cannot initialize optimizer.";
@@ -290,7 +347,17 @@ int layer_free(struct layer *obj) {
             }
             break;
         case LAYER_CONV2D:
-            // TODO: conv layers
+            switch (obj->opt.type) {
+            case OPTIMIZER_SGD:
+                optimizer_sgd_conv2d_free((struct optimizer_sgd_conv2d*)(obj->opt.obj));
+                break;
+            case OPTIMIZER_ADAM:
+                optimizer_adam_conv2d_free((struct optimizer_adam_conv2d*)(obj->opt.obj));
+                break;
+            default:
+                LAST_ERROR = "Invalid optimizer type.";
+                return 0;
+            }
             break;
         default:
             LAST_ERROR = "Layer is untrainable; cannot free optimizer.";
@@ -322,7 +389,17 @@ int layer_update(struct layer* obj) {
             }
             break;
         case LAYER_CONV2D:
-            // TODO: conv layers
+            switch (obj->opt.type) {
+            case OPTIMIZER_SGD:
+                optimizer_sgd_conv2d_update(obj->opt.obj, obj->opt.iter);
+                break;
+            case OPTIMIZER_ADAM:
+                optimizer_adam_conv2d_update(obj->opt.obj, obj->opt.iter);
+                break;
+            default:
+                LAST_ERROR = "Invalid optimizer type.";
+                return 0;
+            }
             break;
         default:
             LAST_ERROR = "Layer is untrainable; cannot update optimizer.";
@@ -517,7 +594,7 @@ int model_free(struct model *obj) {
 }
 
 // Add a layer without initializing it. Returns the layer if successful.
-struct layer *model_add_layer(struct model *obj, enum layer_type type, int input_size, int output_size) {
+struct layer* model_add_layer(struct model *obj, enum layer_type type, int input_size, int output_size) {
     // Create the layer and set the values.
     struct layer *l = (struct layer*)calloc(1, sizeof(struct layer));
     l->prev = obj->last;
@@ -530,6 +607,84 @@ struct layer *model_add_layer(struct model *obj, enum layer_type type, int input
     if (!obj->n_layers) {
         obj->first = l;
     } else {
+        // If this is not the first layer, set the "next" value for the 
+        // previous layer.
+        l->prev->next = l;
+    }
+
+    obj->n_layers++;
+
+    return l;
+}
+
+// Add a conv 2D layer without initializing it. Returns the layer if 
+// successful.
+struct layer* model_add_conv2d_layer(struct model* obj,
+                                     int input_channels, int input_height,
+                                     int input_width, int n_filters,
+                                     int filter_size, int stride) {
+    // Create the layer and set the values.
+    struct layer* l = (struct layer*)calloc(1, sizeof(struct layer));
+    l->prev = obj->last;
+    obj->last = l;
+    l->type = LAYER_CONV2D;
+    l->input_channels = input_channels;
+    l->input_height = input_height;
+    l->input_width = input_width;
+    l->output_channels = n_filters;
+    l->output_height = CALC_CONV2D_OUTPUT_DIM(input_height, filter_size, stride);
+    l->output_width = CALC_CONV2D_OUTPUT_DIM(input_width, filter_size, stride);
+    l->filter_size = filter_size;
+    l->stride = stride;
+    
+    // Calculate the input and output sizes.
+    l->input_size = input_channels * input_height * input_width;
+    l->output_size = n_filters * l->output_height * l->output_width;
+
+    // If this is the first layer, set the first layer.
+    if (!obj->n_layers) {
+        obj->first = l;
+    }
+    else {
+        // If this is not the first layer, set the "next" value for the 
+        // previous layer.
+        l->prev->next = l;
+    }
+
+    obj->n_layers++;
+
+    return l;
+}
+
+// Add a max pooling 2D layer without initializing it. Returns the layer if 
+// successful.
+struct layer* model_add_maxpool2d_layer(struct model* obj,
+                                        int input_channels, int input_height,
+                                        int input_width, int pool_size,
+                                        int stride) {
+    // Create the layer and set the values.
+    struct layer* l = (struct layer*)calloc(1, sizeof(struct layer));
+    l->prev = obj->last;
+    obj->last = l;
+    l->type = LAYER_MAXPOOL2D;
+    l->input_channels = input_channels;
+    l->input_height = input_height;
+    l->input_width = input_width;
+    l->output_channels = input_channels;
+    l->output_height = CALC_MAXPOOL2D_OUTPUT_DIM(input_height, pool_size, stride);
+    l->output_width = CALC_MAXPOOL2D_OUTPUT_DIM(input_width, pool_size, stride);
+    l->filter_size = pool_size;
+    l->stride = stride;
+
+    // Calculate the input and output sizes.
+    l->input_size = input_channels * input_height * input_width;
+    l->output_size = input_channels * l->output_height * l->output_width;
+
+    // If this is the first layer, set the first layer.
+    if (!obj->n_layers) {
+        obj->first = l;
+    }
+    else {
         // If this is not the first layer, set the "next" value for the 
         // previous layer.
         l->prev->next = l;

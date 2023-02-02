@@ -1,13 +1,15 @@
-// sgd.c
-// Stochastic Gradient Descent optimizer for dense layers.
+// sgd_conv2d.c
+// Stochastic Gradient Descent optimizer for conv 2D layers.
 
-#include "sgd.h"
+#include "sgd_conv2d.h"
 #include "matrix.h"
-#include "dense.h"
+#include "conv2d.h"
 
 // Initialize an empty SGD optimizer object.
-int optimizer_sgd_init(struct optimizer_sgd *obj, struct layer_dense *layer, 
-                       double learning_rate, double momentum, double decay) {
+int optimizer_sgd_conv2d_init(struct optimizer_sgd_conv2d *obj, 
+                              struct layer_conv2d *layer, 
+                              double learning_rate, double momentum, 
+                              double decay) {
     // Set the layer and the optimizer's parameters.
     obj->layer = layer;
     obj->learning_rate = learning_rate;
@@ -16,10 +18,10 @@ int optimizer_sgd_init(struct optimizer_sgd *obj, struct layer_dense *layer,
 
     // Initialize the momentum matrices.
     if (momentum) {
-        if (!matrix_init(&obj->weight_m, layer->input_size, layer->output_size)) {
+        if (!matrix_init(&obj->weight_m, layer->weights.n_rows, layer->weights.n_cols)) {
             return 0;
         }
-        if (!matrix_init(&obj->bias_m, 1, layer->output_size)) {
+        if (!matrix_init(&obj->bias_m, 1, layer->biases.n_cols)) {
             return 0;
         }
     }
@@ -28,13 +30,13 @@ int optimizer_sgd_init(struct optimizer_sgd *obj, struct layer_dense *layer,
 }
 
 // Free the matrices owned by the optimizer.
-void optimizer_sgd_free(struct optimizer_sgd *obj) {
+void optimizer_sgd_conv2d_free(struct optimizer_sgd_conv2d *obj) {
     matrix_free(&obj->weight_m);
     matrix_free(&obj->bias_m);
 }
 
 // Update the layer's weights and biases.
-void optimizer_sgd_update(struct optimizer_sgd *obj, int iter) {
+void optimizer_sgd_conv2d_update(struct optimizer_sgd_conv2d *obj, int iter) {
     // Calculate the learning rate.
     double learning_rate = obj->learning_rate;
     if (obj->decay) {

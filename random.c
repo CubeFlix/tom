@@ -41,5 +41,5 @@ double random_normal(double mu, double sigma) {
 
     call = !call;
 
-    return (mu + sigma * (double)X2);
+    return (mu + sigma * (double)X1);
 }

@@ -5,6 +5,7 @@
         "type_traits": "c",
         "xstring": "c",
         "xutility": "c",
-        "binary_crossentropy.h": "c"
+        "binary_crossentropy.h": "c",
+        "sgd_conv2d.h": "c"
     }
 }
