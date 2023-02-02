@@ -15,6 +15,7 @@
 #include "maxpool2d.h"
 #include "dropout.h"
 #include "softmax.h"
+#include "relu.h"
 #include "sgd.h"
 #include "adam.h"
 #include "mse.h"
@@ -69,7 +70,14 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         break;
     case LAYER_SIGMOID:
         break;
-    case LAYER_RELU:
+    case LAYER_RELU:;
+        // Initialize the RELU activation layer.
+        struct activation_relu* relu = calloc(1, sizeof(struct activation_relu));
+        if (!activation_relu_init(relu, obj->input_size, inputs, current_output, current_gradient, d_prev)) {
+            free(relu);
+            return 0;
+        }
+        obj->obj = relu;
         break;
     default:
         LAST_ERROR = "Invalid layer type.";
@@ -145,12 +153,12 @@ int layer_forward(struct layer *obj, bool training) {
         }
         break;
     case LAYER_SOFTMAX:
-        // Initialize the softmax activation layer.
         activation_softmax_forward_stable(obj->obj);
         break;
     case LAYER_SIGMOID:
         break;
     case LAYER_RELU:
+        activation_relu_forward(obj->obj);
         break;
     default:
         LAST_ERROR = "Invalid layer type.";
@@ -173,12 +181,12 @@ int layer_backward(struct layer *obj) {
         layer_dropout_backward(obj->obj);
         break;
     case LAYER_SOFTMAX:
-        // Initialize the softmax activation layer.
         activation_softmax_backward(obj->obj);
         break;
     case LAYER_SIGMOID:
         break;
     case LAYER_RELU:
+        activation_relu_backward(obj->obj);
         break;
     default:
         LAST_ERROR = "Invalid layer type.";
@@ -258,7 +266,7 @@ int layer_update(struct layer* obj) {
                 optimizer_sgd_update(obj->opt.obj, obj->opt.iter);
                 break;
             case OPTIMIZER_ADAM:
-                optimizer_adam_free(obj->opt.obj, obj->opt.iter);
+                optimizer_adam_update(obj->opt.obj, obj->opt.iter);
                 break;
             default:
                 LAST_ERROR = "Invalid optimizer type.";
@@ -587,8 +595,8 @@ double model_calc_loss(struct model *obj, struct matrix *X, struct matrix *Y) {
     double loss = 0.0;
     for (int batch_start = 0; batch_start < X->n_rows; batch_start += obj->n_samples) {
         // Copy the input data and Y values into the model.
-        memcpy(obj->input->buffer, X->buffer[batch_start * X->n_cols], sizeof(double) * X->n_cols * obj->n_samples);
-        memcpy(obj->y->buffer, Y->buffer[batch_start * Y->n_cols], sizeof(double) * Y->n_cols * obj->n_samples);
+        memcpy(obj->input->buffer, (void*)&X->buffer[batch_start * X->n_cols], sizeof(double) * X->n_cols * obj->n_samples);
+        memcpy(obj->y->buffer, (void*)&Y->buffer[batch_start * Y->n_cols], sizeof(double) * Y->n_cols * obj->n_samples);
 
         // Perform the forward pass over the network.
         if (!model_forward(obj, false)) {
@@ -627,8 +635,8 @@ int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epoch
             }
 
             // Copy the input data and Y values into the model.
-            memcpy(obj->input->buffer, X->buffer[batch_start * X->n_cols], sizeof(double) * X->n_cols * obj->n_samples);
-            memcpy(obj->y->buffer, Y->buffer[batch_start * Y->n_cols], sizeof(double) * Y->n_cols * obj->n_samples);
+            memcpy(obj->input->buffer, (void*)&X->buffer[batch_start * X->n_cols], sizeof(double) * X->n_cols * obj->n_samples);
+            memcpy(obj->y->buffer, (void*)&Y->buffer[batch_start * Y->n_cols], sizeof(double) * Y->n_cols * obj->n_samples);
 
             // Perform the forward pass over the network.
             if (!model_forward(obj, true)) {
@@ -647,7 +655,7 @@ int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epoch
 
             if (debug) {
                 // Display the current batch.
-                printf("Training batch %d/%d...", batch_n, X->n_rows / batch_n);
+                printf("Training batch %d/%d...", batch_n+1, X->n_rows / obj->n_samples);
             }
 
             batch_n++;

@@ -181,4 +181,7 @@ int model_forward(struct model *obj, bool training);
 // Perform a backward pass on the model.
 int model_backward(struct model *obj);
 
+// Update each trainable layer in the model.
+int model_update(struct model* obj);
+
 #endif
