@@ -53,7 +53,7 @@ int main(void) {
     QUIT_ON_ERROR(model_finalize(m));
     layer_dense_init_values(l1->obj, WI_GLOROT_NORMAL, BI_ZEROS);
     layer_dense_init_values(l2->obj, WI_GLOROT_NORMAL, BI_ZEROS);
-    QUIT_ON_ERROR(model_init_optimizers(m, OPTIMIZER_SGD, 0.001, 0.0, 0.0));
+    QUIT_ON_ERROR(model_init_optimizers(m, OPTIMIZER_ADAM, 0.001, 0.9, 0.999, 0.0, 1e-7));
     
     // Train the model.
     QUIT_ON_ERROR(model_train(m, &X, &Y, 1000, false));
