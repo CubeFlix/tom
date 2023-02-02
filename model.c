@@ -611,8 +611,27 @@ int model_init_optimizers(struct model* obj, enum optimizer_type type, ...) {
     return 1;
 }
 
-// Perdict a single sample. TODO
-int model_predict(struct model* obj, struct matrix* X) {
+// Perdict. Takes an input and output matrix with any number of samples.
+int model_predict(struct model* obj, struct matrix* X, struct matrix* Y) {
+    // Ensure that the X and Y matrices have the same number of samples.
+    if (X->n_rows != Y->n_rows) {
+        LAST_ERROR = "X and Y matrices must have same number of samples.";
+        return 0;
+    }
+    
+    // Calculate number of batches.
+    int n_batches = (X->n_rows + obj->n_samples - 1) / obj->n_samples;
+
+    // Loop over each batch.
+    int current_batch_size = obj->n_samples;
+    for (int batch_start = 0; batch_start < X->n_rows; batch_start += obj->n_samples) {
+        // If we exceed the number of samples, truncate the batch.
+        if (batch_start + obj->n_samples >= X->n_rows) {
+            current_batch_size = X->n_rows - batch_start;
+        }
+        // i.e. 5 samples, bs 3
+    }
+    
     return 1;
 }
 
@@ -637,7 +656,8 @@ double model_calc_loss(struct model *obj, struct matrix *X, struct matrix *Y) {
     return loss / (double)(X->n_rows / obj->n_samples);
 }
 
-// Train the model.
+// Train the model. If debug is true, it will output the current batch num to
+// stdout and recalculate the loss each epoch.
 int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epochs, bool debug) {
     // Ensure that the X and Y matrices have the same number of samples.
     if (X->n_rows != Y->n_rows) {

@@ -56,7 +56,9 @@ int main(void) {
     QUIT_ON_ERROR(model_init_optimizers(m, OPTIMIZER_SGD, 0.001, 0.0, 0.0));
     
     // Train the model.
-    QUIT_ON_ERROR(model_train(m, &X, &Y, 10, true));
+    QUIT_ON_ERROR(model_train(m, &X, &Y, 1000, false));
+    double loss = model_calc_loss(m, &X, &Y);
+    printf("loss: %f\n", loss);
 
     model_free(m);
     free(m);
