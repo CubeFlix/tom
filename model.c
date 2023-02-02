@@ -42,7 +42,8 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
     }
 
     switch (obj->type) {
-    case LAYER_DENSE:;
+    case LAYER_DENSE:
+    {
         // Initialize the dense layer.
         struct layer_dense* dense = calloc(1, sizeof(struct layer_dense));
         if (!layer_dense_init(dense, obj->input_size, obj->output_size, inputs, current_output, current_gradient, d_prev)) {
@@ -52,6 +53,7 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         obj->trainable = true;
         obj->obj = dense;
         break;
+    }
     case LAYER_CONV2D:
         obj->trainable = true;
         break;
@@ -59,7 +61,8 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         break;
     case LAYER_DROPOUT:
         break;
-    case LAYER_SOFTMAX:;
+    case LAYER_SOFTMAX:
+    {
         // Initialize the softmax activation layer.
         struct activation_softmax* softmax = calloc(1, sizeof(struct activation_softmax));
         if (!activation_softmax_init(softmax, obj->input_size, inputs, current_output, current_gradient, d_prev)) {
@@ -68,9 +71,11 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         }
         obj->obj = softmax;
         break;
+    }
     case LAYER_SIGMOID:
         break;
-    case LAYER_RELU:;
+    case LAYER_RELU:
+    {
         // Initialize the RELU activation layer.
         struct activation_relu* relu = calloc(1, sizeof(struct activation_relu));
         if (!activation_relu_init(relu, obj->input_size, inputs, current_output, current_gradient, d_prev)) {
@@ -79,6 +84,7 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs, struct m
         }
         obj->obj = relu;
         break;
+    }
     default:
         LAST_ERROR = "Invalid layer type.";
         return 0;
@@ -99,13 +105,13 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap
     obj->opt.type = type;
     obj->opt.iter = 0;
 
-    double lr, mom, dec, b1, b2, eps;
-
     switch (obj->type) {
     case LAYER_DENSE:
         switch (type) {
-        case OPTIMIZER_SGD:;
+        case OPTIMIZER_SGD:
+        {
             // Stochastic gradient descent.
+            double lr, mom, dec;
             lr = va_arg(ap, double);
             mom = va_arg(ap, double);
             dec = va_arg(ap, double);
@@ -116,8 +122,11 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap
                 return 0;
             }
             break;
-        case OPTIMIZER_ADAM:;
+        }
+        case OPTIMIZER_ADAM:
+        {
             // Adam.
+            double lr, b1, b2, dec, eps;
             lr = va_arg(ap, double);
             b1 = va_arg(ap, double);
             b2 = va_arg(ap, double);
@@ -130,6 +139,7 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type, va_list ap
                 return 0;
             }
             break;
+        }
         default:
             LAST_ERROR = "Invalid optimizer type.";
             return 0;
@@ -307,33 +317,39 @@ int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
     obj->y = y;
 
     switch (obj->type) {
-    case LOSS_MSE:;
+    case LOSS_MSE:
+    {
         // Initialize the MSE loss.
-        struct loss_mse *mse = calloc(1, sizeof(struct loss_mse));
+        struct loss_mse* mse = calloc(1, sizeof(struct loss_mse));
         if (!loss_mse_init(mse, input->n_cols, input, y, output, d_input)) {
             free(mse);
             return 0;
         }
         obj->obj = mse;
         break;
-    case LOSS_CROSSENTROPY:;
+    }
+    case LOSS_CROSSENTROPY:
+    {
         // Initialize the crossentropy loss.
-        struct loss_crossentropy *crossentropy = calloc(1, sizeof(struct loss_crossentropy));
+        struct loss_crossentropy* crossentropy = calloc(1, sizeof(struct loss_crossentropy));
         if (!loss_crossentropy_init(crossentropy, input->n_cols, input, y, output, d_input)) {
             free(crossentropy);
             return 0;
         }
         obj->obj = crossentropy;
         break;
-    case LOSS_BINARY_CROSSENTROPY:;
+    }
+    case LOSS_BINARY_CROSSENTROPY:
+    {
         // Initialize the binary crossentropy loss.
-        struct loss_binary_crossentropy *binary_crossentropy = calloc(1, sizeof(struct loss_binary_crossentropy));
+        struct loss_binary_crossentropy* binary_crossentropy = calloc(1, sizeof(struct loss_binary_crossentropy));
         if (!loss_binary_crossentropy_init(binary_crossentropy, input->n_cols, input, y, output, d_input)) {
             free(binary_crossentropy);
             return 0;
         }
         obj->obj = binary_crossentropy;
         break;
+    }
     default:
         LAST_ERROR = "Invalid loss type.";
         return 0;
