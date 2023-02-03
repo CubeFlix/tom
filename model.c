@@ -864,12 +864,19 @@ int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epoch
     }
 
     int batch_n;
+    double acc_loss;
     for (int epoch = 0; epoch < epochs; epoch++) {
         batch_n = 0;
+        acc_loss = 0.0;
         for (int batch_start = 0; batch_start < X->n_rows; batch_start += obj->n_samples) {
             if (debug) {
-                // Clear the debug output.
-                printf("\33[2K\r");
+                // Display the current batch.
+                if (batch_n == 0) {
+                    printf("Training batch %d/%d...", batch_n + 1, X->n_rows / obj->n_samples);
+                } else {
+                    printf("Training batch %d/%d (avg loss %f)...", batch_n + 1, X->n_rows / obj->n_samples, acc_loss / (double)batch_n);
+                }
+                fflush(stdout);
             }
 
             // Copy the input data and Y values into the model.
@@ -892,17 +899,17 @@ int model_train(struct model* obj, struct matrix* X, struct matrix* Y, int epoch
             }
 
             if (debug) {
-                // Display the current batch.
-                printf("Training batch %d/%d...", batch_n+1, X->n_rows / obj->n_samples);
+                // Clear the debug output.
+                printf("\33[2K\r");
+
+                // Accumulate the loss.
+                acc_loss += obj->loss.batch_loss;
             }
 
             batch_n++;
         }
 
         if (debug) {
-            // Flush the line.
-            printf("\n");
-
             // Display the epoch and loss.
             double loss = model_calc_loss(obj, X, Y);
             printf("Epoch: %d, Training Loss: %f\n", epoch, loss);
