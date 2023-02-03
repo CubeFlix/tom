@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 
 #include "headers.h"
 
@@ -26,6 +27,27 @@ void segvHandler(int s) {
 void abrtHandler(int s) {
     printf("Aborted %d\n", s);
     exit(1);
+}
+
+static void shuffle(void* X, void* Y, size_t n, size_t size) {
+    char tmp[size];
+    size_t stride = size * sizeof(char);
+
+    if (n > 1) {
+        size_t i;
+        for (i = 0; i < n - 1; ++i) {
+            size_t rnd = (size_t)rand();
+            size_t j = i + rnd / (RAND_MAX / (n - i) + 1);
+
+            memcpy(tmp, X + j * stride, size);
+            memcpy(X + j * stride, X + i * stride, size);
+            memcpy(X + i * stride, tmp, size);
+
+            memcpy(tmp, Y + j * stride, size);
+            memcpy(Y + j * stride, Y + i * stride, size);
+            memcpy(Y + i * stride, tmp, size);
+        }
+    }
 }
 
 int main(void) {
@@ -42,6 +64,7 @@ int main(void) {
         X.buffer[i] = (double)i / (double)n_samples;
         Y.buffer[i] = sin(X.buffer[i] * 5.0);
     }
+    shuffle(X.buffer, Y.buffer, n_samples, sizeof(double));
 
     // Create the model.
     struct model *m = calloc(1, sizeof(struct model));
@@ -60,10 +83,19 @@ int main(void) {
     double loss = model_calc_loss(m, &X, &Y);
     printf("loss: %f\n", loss);
 
+    // Model output values.
+    struct matrix yhat;
+    QUIT_ON_ERROR(matrix_init(&yhat, n_samples, 1));
+    QUIT_ON_ERROR(model_predict(m, &X, &yhat));
+    for (int i = 0; i < n_samples; i++) {
+        printf("%f, %f, %f\n", X.buffer[i], Y.buffer[i], yhat.buffer[i]);
+    }
+
     model_free(m);
     free(m);
     matrix_free(&X);
     matrix_free(&Y);
+    matrix_free(&yhat);
     printf("done\n");
     return 0;
 }

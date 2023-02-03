@@ -821,7 +821,7 @@ int model_predict(struct model* obj, struct matrix* X, struct matrix* Y) {
         }
 
         // Copy the output data to the matrix.
-        memcpy((void*)&Y[batch_start * Y->n_cols], obj->output->buffer, sizeof(double) * Y->n_cols * current_batch_size);
+        memcpy((void*)&Y->buffer[batch_start * Y->n_cols], obj->output->buffer, sizeof(double) * Y->n_cols * current_batch_size);
     }
     
     return 1;
