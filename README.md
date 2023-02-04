@@ -17,7 +17,7 @@ a neural network written in c. see `mnist_test.c` for usage example.
 - [ ] more activations and functions
 - [x] optimizers for conv2d layers
 - [x] model object
-- [ ] mnist, iris, conv tests
+- [x] mnist, iris, conv tests
 - [ ] misc functions
 - [ ] cifar?
 - [ ] rnn?
