@@ -5,7 +5,7 @@ a neural network written in c. see `mnist_test.c` for usage example.
 ## todo
 
 - [x] binary cross-entropy
-- [ ] saving and loading models
+- [x] saving and loading models
 - [x] dropout
 - [x] regularization
 - [x] iris dataset
