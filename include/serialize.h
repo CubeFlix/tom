@@ -1,7 +1,7 @@
 // serialize.h
 // Model serialization.
 
-#include <stdlib.h>
+#include <stdio.h>
 
 #include "model.h"
 #include "matrix.h"

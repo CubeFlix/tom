@@ -5,6 +5,7 @@
 #define MODEL_H
 
 #include <stdbool.h>
+#include <stdarg.h>
 
 #include "matrix.h"
 
