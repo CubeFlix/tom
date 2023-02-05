@@ -1,1 +1,0 @@
-gcc -O3 -Wall $1.c matrix.c dense.c random.c relu.c mse.c sgd.c adam.c sgd_conv2d.c adam_conv2d.c softmax.c sigmoid.c crossentropy.c binary_crossentropy.c dropout.c conv2d.c maxpool2d.c model.c serialize.c -o $1 -lm

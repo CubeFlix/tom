@@ -1,4 +1,4 @@
-// headers.h
+// tom.h
 // Headers to include Tom.
 
 #include "errors.h"
