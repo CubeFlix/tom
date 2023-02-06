@@ -21,4 +21,5 @@ a neural network written in c. see `mnist_test.c` for usage example.
 - [ ] misc functions
 - [ ] cifar?
 - [ ] rnn?
+- [ ] DOCUMENTATION
 - [x] clean
