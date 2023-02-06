@@ -1,7 +1,6 @@
 // dense.c
 // Dense layer.
 
-#include <assert.h>
 #include <math.h>
 
 #include "dense.h"

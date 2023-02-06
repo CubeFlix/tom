@@ -2,7 +2,6 @@
 // Cross-entropy loss function.
 
 #include <math.h>
-#include <stdio.h>
 
 #include "crossentropy.h"
 #include "matrix.h"

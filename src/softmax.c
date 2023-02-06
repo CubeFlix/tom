@@ -2,7 +2,6 @@
 // Softmax activation function.
 
 #include <math.h>
-#include <stdio.h>
 
 #include "softmax.h"
 #include "matrix.h"

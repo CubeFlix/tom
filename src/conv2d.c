@@ -1,7 +1,6 @@
 // conv2d.c
 // 2D conv layer.
 
-#include <stdio.h>
 #include <math.h>
 
 #include "conv2d.h"
