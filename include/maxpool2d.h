@@ -5,6 +5,7 @@
 #define MAXPOOL2D_H
 
 #include "matrix.h"
+#include "declspec.h"
 
 extern char *LAST_ERROR;
 
@@ -31,19 +32,19 @@ struct layer_maxpool2d {
 #define CALC_MAXPOOL2D_OUTPUT_DIM(dim, pool_size, stride) ((dim - pool_size) / stride + 1)
 
 // Initialize an empty layer object.
-int layer_maxpool2d_init(struct layer_maxpool2d *obj, int n_channels, 
+extern TOM_API int layer_maxpool2d_init(struct layer_maxpool2d *obj, int n_channels, 
                          int input_height, int input_width, int pool_size, 
                          int stride, struct matrix *input, 
                          struct matrix *output, struct matrix *d_outputs, 
                          struct matrix *d_inputs);
 
 // Free the cache owned by the layer.
-void layer_maxpool2d_free(struct layer_maxpool2d *obj);
+extern TOM_API void layer_maxpool2d_free(struct layer_maxpool2d *obj);
 
 // Perform a forward pass on the layer.
-void layer_maxpool2d_forward(struct layer_maxpool2d *obj);
+extern TOM_API void layer_maxpool2d_forward(struct layer_maxpool2d *obj);
 
 // Perform a backward pass on the layer.
-void layer_maxpool2d_backward(struct layer_maxpool2d *obj);
+extern TOM_API void layer_maxpool2d_backward(struct layer_maxpool2d *obj);
 
 #endif

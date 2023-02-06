@@ -1,7 +1,11 @@
 // relu.h
 // Rectified Linear Unit activation function.
 
+#ifndef RELU_H
+#define RELU_H
+
 #include "matrix.h"
+#include "declspec.h"
 
 extern char *LAST_ERROR;
 
@@ -20,12 +24,14 @@ struct activation_relu {
 };
 
 // Initialize an empty RELU activation object.
-int activation_relu_init(struct activation_relu *obj, int input_size, 
+extern TOM_API int activation_relu_init(struct activation_relu *obj, int input_size, 
                          struct matrix *input, struct matrix *output, 
                          struct matrix *d_outputs, struct matrix *d_inputs);
 
 // Perform a forward pass on the activation.
-void activation_relu_forward(struct activation_relu *obj);
+extern TOM_API void activation_relu_forward(struct activation_relu *obj);
 
 // Perform a backward pass on the activation.
-void activation_relu_backward(struct activation_relu *obj);
+extern TOM_API void activation_relu_backward(struct activation_relu *obj);
+
+#endif

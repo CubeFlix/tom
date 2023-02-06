@@ -5,6 +5,7 @@
 #define DENSE_H
 
 #include "matrix.h"
+#include "declspec.h"
 
 extern char *LAST_ERROR;
 
@@ -74,27 +75,27 @@ enum bias_initializer {
 };
 
 // Initialize an empty layer object.
-int layer_dense_init(struct layer_dense *obj, int input_size, 
+extern TOM_API int layer_dense_init(struct layer_dense *obj, int input_size, 
                       int output_size, struct matrix *input, 
                       struct matrix *output, struct matrix *d_outputs, 
                       struct matrix *d_inputs);
 
 // Initialize the weights and biases.
-int layer_dense_init_values(struct layer_dense *obj, enum weight_initializer wi_type, enum bias_initializer bi_type);
+extern TOM_API int layer_dense_init_values(struct layer_dense *obj, enum weight_initializer wi_type, enum bias_initializer bi_type);
 
 // Initialize regularization.
-void layer_dense_init_regularization(struct layer_dense *obj, double l1_weights, double l2_weights, double l1_biases, double l2_biases);
+extern TOM_API void layer_dense_init_regularization(struct layer_dense *obj, double l1_weights, double l2_weights, double l1_biases, double l2_biases);
 
 // Free the matrices owned by the layer.
-void layer_dense_free(struct layer_dense *obj);
+extern TOM_API void layer_dense_free(struct layer_dense *obj);
 
 // Perform a forward pass on the layer.
-void layer_dense_forward(struct layer_dense *obj);
+extern TOM_API void layer_dense_forward(struct layer_dense *obj);
 
 // Perform a backward pass on the layer.
-void layer_dense_backward(struct layer_dense *obj);
+extern TOM_API void layer_dense_backward(struct layer_dense *obj);
 
 // Calculate the total regularization loss for the layer.
-double layer_dense_calculate_regularization(struct layer_dense *obj);
+extern TOM_API double layer_dense_calculate_regularization(struct layer_dense *obj);
 
 #endif

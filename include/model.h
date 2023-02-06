@@ -8,6 +8,7 @@
 #include <stdarg.h>
 
 #include "matrix.h"
+#include "declspec.h"
 
 extern char *LAST_ERROR;
 
@@ -95,26 +96,26 @@ struct layer {
 // output size set. Requires the input matrix and the gradients from the
 // previous layer. Initializes the layer object itself, along with the output
 // matrix and output gradients.
-int layer_init(struct layer* obj, int n_samples, struct matrix* inputs,
+extern TOM_API int layer_init(struct layer* obj, int n_samples, struct matrix* inputs,
                struct matrix* d_prev);
 
 // Initialize the layer's optimizer. Requires an optimizer type and variable
 // args list, which will be used by the function.
-int layer_init_optimizer(struct layer* obj, enum optimizer_type type,
+extern TOM_API int layer_init_optimizer(struct layer* obj, enum optimizer_type type,
                          va_list ap);
 
 // Perform a forward pass on the layer.
-int layer_forward(struct layer* obj, bool training);
+extern TOM_API int layer_forward(struct layer* obj, bool training);
 
 // Perform a backward pass on the layer.
-int layer_backward(struct layer* obj);
+extern TOM_API int layer_backward(struct layer* obj);
 
 // Free the layer, along with its matrices and optimizer. If a matrix is 
 // already freed or not initialized, it will be skipped.
-int layer_free(struct layer *obj);
+extern TOM_API int layer_free(struct layer *obj);
 
 // Perform an update on the layer's optimizer.
-int layer_update(struct layer* obj);
+extern TOM_API int layer_update(struct layer* obj);
 
 // Loss type enum.
 enum loss_type {
@@ -148,17 +149,17 @@ struct loss {
 
 // Initialize the loss object. The type should already be set. Requires the 
 // input, y, and output matrices, along with the input gradients.
-int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
+extern TOM_API int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
               struct matrix* output, struct matrix* d_input);
 
 // Perform a forward pass on the loss.
-int loss_forward(struct loss* obj);
+extern TOM_API int loss_forward(struct loss* obj);
 
 // Perform a backward pass on the loss.
-int loss_backward(struct loss* obj);
+extern TOM_API int loss_backward(struct loss* obj);
 
 // Free the loss object.
-int loss_free(struct loss *obj);
+extern TOM_API int loss_free(struct loss *obj);
 
 // The model object.
 struct model {
@@ -185,56 +186,56 @@ struct model {
 };
 
 // Initialize an empty model object.
-int model_init(struct model *obj, int n_samples);
+extern TOM_API int model_init(struct model *obj, int n_samples);
 
 // Free a model object. Free all the layers, optimizers, and matrices, along
 // with the loss.
-int model_free(struct model *obj);
+extern TOM_API int model_free(struct model *obj);
 
 // Add and initialize a layer.
-struct layer* model_add_layer(struct model *obj, enum layer_type type, 
+extern TOM_API struct layer* model_add_layer(struct model *obj, enum layer_type type, 
                               int input_size, int output_size);
 
 // Add a conv 2D layer without initializing it. Returns the layer if 
 // successful.
-struct layer* model_add_conv2d_layer(struct model* obj,
+extern TOM_API struct layer* model_add_conv2d_layer(struct model* obj,
     int input_channels, int input_height,
     int input_width, int n_filters,
     int filter_size, int stride);
 
 // Add a max pooling 2D layer without initializing it. Returns the layer if 
 // successful.
-struct layer* model_add_maxpool2d_layer(struct model* obj,
+extern TOM_API struct layer* model_add_maxpool2d_layer(struct model* obj,
     int input_channels, int input_height,
     int input_width, int pool_size,
     int stride);
 
 // Set the layer's loss.
-void model_set_loss(struct model *obj, enum loss_type type) ;
+extern TOM_API void model_set_loss(struct model *obj, enum loss_type type) ;
 
 // Finalize and initialize the model.
-int model_finalize(struct model *obj);
+extern TOM_API int model_finalize(struct model *obj);
 
 // Initialize optimizers on the model.
-int model_init_optimizers(struct model *obj, enum optimizer_type type, ...);
+extern TOM_API int model_init_optimizers(struct model *obj, enum optimizer_type type, ...);
 
 // Predict. Takes an input and output matrix with any number of samples.
-int model_predict(struct model* obj, struct matrix* X, struct matrix* Y);
+extern TOM_API int model_predict(struct model* obj, struct matrix* X, struct matrix* Y);
 
 // Calculate model loss.
-double model_calc_loss(struct model* obj, struct matrix* X, struct matrix* Y);
+extern TOM_API double model_calc_loss(struct model* obj, struct matrix* X, struct matrix* Y);
 
 // Train the model.
-int model_train(struct model* obj, struct matrix* X, struct matrix* Y, 
+extern TOM_API int model_train(struct model* obj, struct matrix* X, struct matrix* Y, 
                 int epochs, bool debug);
 
 // Perform a forward pass on the model.
-int model_forward(struct model *obj, bool training);
+extern TOM_API int model_forward(struct model *obj, bool training);
 
 // Perform a backward pass on the model.
-int model_backward(struct model *obj);
+extern TOM_API int model_backward(struct model *obj);
 
 // Update each trainable layer in the model.
-int model_update(struct model* obj);
+extern TOM_API int model_update(struct model* obj);
 
 #endif

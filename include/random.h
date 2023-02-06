@@ -1,11 +1,18 @@
 // random.c
 // Random number generation.
 
+#ifndef RANDOM_H
+#define RANDOM_H
+
+#include "declspec.h"
+
 // Initialize the RNG.
-void random_init();
+extern TOM_API void random_init();
 
 // Generate a uniform random value from min to min+range.
-double random_uniform(double min, double range);
+extern TOM_API double random_uniform(double min, double range);
 
 // Generate a normal random value.
-double random_normal(double mu, double sigma);
+extern TOM_API double random_normal(double mu, double sigma);
+
+#endif

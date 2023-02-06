@@ -1,8 +1,12 @@
 // sgd.h
 // Stochastic Gradient Descent optimizer for dense layers.
 
+#ifndef SGD_H
+#define SGD_H
+
 #include "matrix.h"
 #include "dense.h"
+#include "declspec.h"
 
 // The Stochastic Gradient Descent optimizer algorithm, with momentum and 
 // decay.
@@ -18,11 +22,13 @@ struct optimizer_sgd {
 };
 
 // Initialize an empty SGD optimizer object.
-int optimizer_sgd_init(struct optimizer_sgd *obj, struct layer_dense *layer, 
+extern TOM_API int optimizer_sgd_init(struct optimizer_sgd *obj, struct layer_dense *layer, 
                        double learning_rate, double momentum, double decay);
 
 // Free the matrices owned by the optimizer.
-void optimizer_sgd_free(struct optimizer_sgd *obj);
+extern TOM_API void optimizer_sgd_free(struct optimizer_sgd *obj);
 
 // Update the layer's weights and biases.
-void optimizer_sgd_update(struct optimizer_sgd *obj, int iter);
+extern TOM_API void optimizer_sgd_update(struct optimizer_sgd *obj, int iter);
+
+#endif

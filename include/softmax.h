@@ -1,7 +1,11 @@
 // softmax.h
 // Softmax activation function.
 
+#ifndef SOFTMAX_H
+#define SOFTMAX_H
+
 #include "matrix.h"
+#include "declspec.h"
 
 extern char *LAST_ERROR;
 
@@ -23,18 +27,20 @@ struct activation_softmax {
 };
 
 // Initialize an empty softmax activation object.
-int activation_softmax_init(struct activation_softmax *obj, int input_size, 
+extern TOM_API int activation_softmax_init(struct activation_softmax *obj, int input_size, 
                          struct matrix *input, struct matrix *output, 
                          struct matrix *d_outputs, struct matrix *d_inputs);
 
 // Free the activation's matrices.
-void activation_softmax_free(struct activation_softmax *obj);
+extern TOM_API void activation_softmax_free(struct activation_softmax *obj);
 
 // Perform a forward pass on the activation.
-void activation_softmax_forward(struct activation_softmax *obj);
+extern TOM_API void activation_softmax_forward(struct activation_softmax *obj);
 
 // Perform a numerically stable forward pass on the activation.
-void activation_softmax_forward_stable(struct activation_softmax *obj);
+extern TOM_API void activation_softmax_forward_stable(struct activation_softmax *obj);
 
 // Perform a backward pass on the activation.
-void activation_softmax_backward(struct activation_softmax *obj);
+extern TOM_API void activation_softmax_backward(struct activation_softmax *obj);
+
+#endif

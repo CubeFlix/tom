@@ -1,7 +1,11 @@
 // sigmoid.h
 // Sigmoid activation function.
 
+#ifndef SIGMOID_H
+#define SIGMOID_H
+
 #include "matrix.h"
+#include "declspec.h"
 
 extern char *LAST_ERROR;
 
@@ -19,12 +23,14 @@ struct activation_sigmoid {
 };
 
 // Initialize an empty sigmoid activation object.
-int activation_sigmoid_init(struct activation_sigmoid *obj, int input_size, 
+extern TOM_API int activation_sigmoid_init(struct activation_sigmoid *obj, int input_size, 
                          struct matrix *input, struct matrix *output, 
                          struct matrix *d_outputs, struct matrix *d_inputs);
 
 // Perform a forward pass on the activation.
-void activation_sigmoid_forward(struct activation_sigmoid *obj);
+extern TOM_API void activation_sigmoid_forward(struct activation_sigmoid *obj);
 
 // Perform a backward pass on the activation.
-void activation_sigmoid_backward(struct activation_sigmoid *obj);
+extern TOM_API void activation_sigmoid_backward(struct activation_sigmoid *obj);
+
+#endif

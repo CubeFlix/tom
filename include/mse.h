@@ -1,7 +1,11 @@
 // mse.h
 // Mean Squared Error loss function.
 
+#ifndef MSE_H
+#define MSE_H
+
 #include "matrix.h"
+#include "declspec.h"
 
 extern char *LAST_ERROR;
 
@@ -21,12 +25,14 @@ struct loss_mse {
 };
 
 // Initialize an empty MSE loss object.
-int loss_mse_init(struct loss_mse *obj, int input_size, struct matrix *input,
+extern TOM_API int loss_mse_init(struct loss_mse *obj, int input_size, struct matrix *input,
                   struct matrix *y, struct matrix *output, 
                   struct matrix *d_inputs);
 
 // Perform a forward pass on the loss.
-double loss_mse_forward(struct loss_mse *obj);
+extern TOM_API double loss_mse_forward(struct loss_mse *obj);
 
 // Perform a backward pass on the loss.
-void loss_mse_backward(struct loss_mse *obj);
+extern TOM_API void loss_mse_backward(struct loss_mse *obj);
+
+#endif

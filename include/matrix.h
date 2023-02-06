@@ -4,6 +4,8 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
+#include "declspec.h"
+
 extern char *LAST_ERROR;
 
 // Matrix struct. We store the matrix data as a buffer of doubles, row by row.
@@ -15,9 +17,9 @@ struct matrix {
 };
 
 // Initialize an empty matrix object.
-int matrix_init(struct matrix *obj, int n_rows, int n_cols);
+extern TOM_API int matrix_init(struct matrix *obj, int n_rows, int n_cols);
 
 // Free a matrix buffer.
-void matrix_free(struct matrix *obj);
+extern TOM_API void matrix_free(struct matrix *obj);
 
 #endif

@@ -1,7 +1,11 @@
 // binary_crossentropy.h
 // Binary cross-entropy loss function.
 
+#ifndef BINARY_CROSSENTROPY_H
+#define BINARY_CROSSENTROPY_H
+
 #include "matrix.h"
+#include "declspec.h"
 
 extern char *LAST_ERROR;
 
@@ -21,13 +25,15 @@ struct loss_binary_crossentropy {
 };
 
 // Initialize an empty binary cross-entropy loss object.
-int loss_binary_crossentropy_init(struct loss_binary_crossentropy *obj, 
+extern TOM_API int loss_binary_crossentropy_init(struct loss_binary_crossentropy *obj, 
                                   int input_size, struct matrix *input, 
                                   struct matrix *y, struct matrix *output, 
                                   struct matrix *d_inputs);
 
 // Perform a forward pass on the loss.
-double loss_binary_crossentropy_forward(struct loss_binary_crossentropy *obj);
+extern TOM_API double loss_binary_crossentropy_forward(struct loss_binary_crossentropy *obj);
 
 // Perform a backward pass on the loss.
-void loss_binary_crossentropy_backward(struct loss_binary_crossentropy *obj);
+extern TOM_API void loss_binary_crossentropy_backward(struct loss_binary_crossentropy *obj);
+
+#endif

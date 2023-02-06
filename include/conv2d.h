@@ -6,6 +6,7 @@
 
 #include "matrix.h"
 #include "dense.h"
+#include "declspec.h"
 
 extern char *LAST_ERROR;
 
@@ -36,22 +37,22 @@ struct layer_conv2d {
 #define CALC_CONV2D_OUTPUT_DIM(dim, filter_size, stride) ((dim - filter_size) / stride + 1)
 
 // Initialize an empty layer object.
-int layer_conv2d_init(struct layer_conv2d *obj, int n_channels, 
+extern TOM_API int layer_conv2d_init(struct layer_conv2d *obj, int n_channels, 
                       int input_height, int input_width, int n_filters, 
                       int filter_size, int stride, struct matrix *input, 
                       struct matrix *output, struct matrix *d_outputs, 
                       struct matrix *d_inputs);
 
 // Initialize the weights and biases.
-int layer_conv2d_init_values(struct layer_conv2d *obj, enum weight_initializer wi_type, enum bias_initializer bi_type);
+extern TOM_API int layer_conv2d_init_values(struct layer_conv2d *obj, enum weight_initializer wi_type, enum bias_initializer bi_type);
 
 // Free the matrices owned by the layer.
-void layer_conv2d_free(struct layer_conv2d *obj);
+extern TOM_API void layer_conv2d_free(struct layer_conv2d *obj);
 
 // Perform a forward pass on the layer.
-void layer_conv2d_forward(struct layer_conv2d *obj);
+extern TOM_API void layer_conv2d_forward(struct layer_conv2d *obj);
 
 // Perform a backward pass on the layer.
-void layer_conv2d_backward(struct layer_conv2d *obj);
+extern TOM_API void layer_conv2d_backward(struct layer_conv2d *obj);
 
 #endif
