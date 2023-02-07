@@ -26,6 +26,10 @@ extern "C" {
 #include "model.h"
 #include "serialize.h"
 #include "version.h"
+#include "rmsprop.h"
+#include "rmsprop_conv2d.h"
+#include "sgd_conv2d.h"
+#include "adam_conv2d.h"
 
 #ifdef __cplusplus
 }
