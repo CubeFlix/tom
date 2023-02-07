@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "serialize.h"
 #include "model.h"
@@ -15,7 +16,7 @@
 // Serialize a matrix's data.
 int serialize_matrix(struct matrix* obj, FILE* fp) {
 	// Serialize the matrix values.
-	if (fwrite(obj->buffer, sizeof(double), obj->size, fp) != sizeof(double) * obj->size) {
+	if (fwrite(obj->buffer, sizeof(double), obj->size, fp) != (size_t)obj->size) {
 		LAST_ERROR = "Failed to write file.";
 		return 0;
 	}
@@ -25,7 +26,7 @@ int serialize_matrix(struct matrix* obj, FILE* fp) {
 // Deserialize a matrix's data.
 int deserialize_matrix(struct matrix* obj, FILE* fp) {
 	// Deserialize the matrix values.
-	if (fread(obj->buffer, sizeof(double), obj->size, fp) != sizeof(double) * obj->size) {
+	if (fread(obj->buffer, sizeof(double), obj->size, fp) != (size_t)obj->size) {
 		LAST_ERROR = "Failed to read file.";
 		return 0;
 	}
@@ -35,13 +36,13 @@ int deserialize_matrix(struct matrix* obj, FILE* fp) {
 // Serialize a layer.
 int serialize_layer(struct layer* obj, FILE* fp) {
 	// Write the layer type.
-	if (fwrite(&obj->type, sizeof(enum layer_type), 1, fp) != sizeof(enum layer_type)) {
+	if (fwrite(&obj->type, sizeof(enum layer_type), 1, fp) != 1) {
 		LAST_ERROR = "Failed to write file.";
 		return 0;
     }
 
 	// Write the layer parameters.
-	if (fwrite(&obj->input_size, sizeof(int), 10, fp) != sizeof(int) * 10) {
+	if (fwrite(&obj->input_size, sizeof(int), 10, fp) != 10) {
 		LAST_ERROR = "Failed to write file.";
 		return 0;
 	}
@@ -70,7 +71,7 @@ int serialize_layer_params(struct layer* obj, FILE* fp) {
 		}
 		break;
 	case LAYER_DROPOUT:
-		if (fwrite(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp) != sizeof(double)) {
+		if (fwrite(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
 			LAST_ERROR = "Failed to write file.";
 			return 0;
 		}
@@ -78,6 +79,7 @@ int serialize_layer_params(struct layer* obj, FILE* fp) {
 	default:
 		break;
 	}
+	
 	return 1;
 }
 
@@ -85,23 +87,23 @@ int serialize_layer_params(struct layer* obj, FILE* fp) {
 int deserialize_layer(struct model* obj, FILE* fp) {
 	// Read the layer type.
 	enum layer_type ltype;
-	if (fread(&ltype, sizeof(enum layer_type), 1, fp) != sizeof(enum layer_type)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&ltype, sizeof(enum layer_type), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
 
 	// Read the layer parameters.
 	int input_size, output_size;
 	int input_channels, input_height, input_width;
 	int output_channels, output_height, output_width;
 	int filter_size, stride;
-	if (fread(&input_size, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
-	if (fread(&output_size, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
-	if (fread(&input_channels, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
-	if (fread(&input_height, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
-	if (fread(&input_width, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
-	if (fread(&output_channels, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
-	if (fread(&output_height, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
-	if (fread(&output_width, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
-	if (fread(&filter_size, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
-	if (fread(&stride, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&input_size, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&output_size, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&input_channels, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&input_height, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&input_width, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&output_channels, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&output_height, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&output_width, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&filter_size, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&stride, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
 
 	switch (ltype) {
 	case LAYER_CONV2D:
@@ -143,7 +145,7 @@ int deserialize_layer_params(struct layer* obj, FILE* fp) {
 		break;
 	case LAYER_DROPOUT:
 		// Dropout layer.
-		if (fread(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp) != sizeof(double)) {
+		if (fread(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
 			LAST_ERROR = "Failed to read file.";
 			return 0;
 		}
@@ -158,13 +160,13 @@ int deserialize_layer_params(struct layer* obj, FILE* fp) {
 // and again for layer parameters.
 int serialize_model(struct model* obj, FILE* fp) {
 	// Write the number of layers.
-	if (fwrite(&obj->n_layers, sizeof(int), 1, fp) != sizeof(int)) {
+	if (fwrite(&obj->n_layers, sizeof(int), 1, fp) != 1) {
 		LAST_ERROR = "Failed to write file.";
 		return 0;
 	}
 
 	// Write the loss type.
-	if (fwrite(&obj->loss.type, sizeof(enum loss_type), 1, fp) != sizeof(int)) {
+	if (fwrite(&obj->loss.type, sizeof(enum loss_type), 1, fp) != 1) {
 		LAST_ERROR = "Failed to write file.";
 		return 0;
 	}
@@ -195,12 +197,14 @@ int serialize_model(struct model* obj, FILE* fp) {
 int deserialize_model(struct model* obj, FILE* fp) {
 	// Get the number of layers.
 	int n_layers;
-	if (fread(&n_layers, sizeof(int), 1, fp) != sizeof(int)) {
+	if (fread(&n_layers, sizeof(int), 1, fp) != 1) {
+		LAST_ERROR = "Failed to read file.";
 		return 0;
 	}
 
 	// Get the loss type.
-	if (fread(&obj->loss.type, sizeof(enum loss_type), 1, fp) != sizeof(int)) {
+	if (fread(&obj->loss.type, sizeof(enum loss_type), 1, fp) != 1) {
+		LAST_ERROR = "Failed to read file.";
 		return 0;
 	}
 

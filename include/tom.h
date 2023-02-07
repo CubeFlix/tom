@@ -25,6 +25,7 @@ extern "C" {
 #include "maxpool2d.h"
 #include "model.h"
 #include "serialize.h"
+#include "version.h"
 
 #ifdef __cplusplus
 }
