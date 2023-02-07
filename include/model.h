@@ -54,12 +54,18 @@ enum layer_type {
 
     // RELU layer.
     LAYER_RELU,
+	
+	// Leaky RELU layer.
+	LAYER_LEAKY_RELU,
 
     // Sigmoid layer.
     LAYER_SIGMOID,
 
     // Softmax layer.
-    LAYER_SOFTMAX
+    LAYER_SOFTMAX,
+	
+	// Tanh layer.
+	LAYER_TANH
 };
 
 // The generic layer object. 

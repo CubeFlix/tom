@@ -17,6 +17,8 @@
 #include "sigmoid.h"
 #include "softmax.h"
 #include "relu.h"
+#include "leaky_relu.h"
+#include "tanh.h"
 #include "sgd.h"
 #include "adam.h"
 #include "rmsprop.h"
@@ -128,6 +130,28 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs,
         obj->obj = relu;
         break;
     }
+	case LAYER_LEAKY_RELU:
+	{
+		// Initialize the leaky RELU activation layer.
+		struct activation_leaky_relu* relu = calloc(1, sizeof(struct activation_leaky_relu));
+		if (!activation_leaky_relu_init(relu, obj->input_size, 0.01, inputs, current_output, current_gradient, d_prev)) {
+			free(relu);
+			return 0;
+		}
+		obj->obj = relu;
+		break;
+	}
+	case LAYER_TANH:
+	{
+		// Initialize the tanh activation layer.
+		struct activation_tanh* tanh = calloc(1, sizeof(struct activation_tanh));
+		if (!activation_tanh_init(tanh, obj->input_size, inputs, current_output, current_gradient, d_prev)) {
+			free(tanh);
+			return 0;
+		}
+		obj->obj = tanh;
+		break;
+	}
     default:
         LAST_ERROR = "Invalid layer type.";
         return 0;
@@ -300,6 +324,12 @@ int layer_forward(struct layer *obj, bool training) {
     case LAYER_RELU:
         activation_relu_forward(obj->obj);
         break;
+	case LAYER_LEAKY_RELU:
+		activation_leaky_relu_forward(obj->obj);
+		break;
+	case LAYER_TANH:
+		activation_tanh_forward(obj->obj);
+		break;
     default:
         LAST_ERROR = "Invalid layer type.";
         return 0;
@@ -331,6 +361,12 @@ int layer_backward(struct layer *obj) {
     case LAYER_RELU:
         activation_relu_backward(obj->obj);
         break;
+	case LAYER_LEAKY_RELU:
+		activation_leaky_relu_backward(obj->obj);
+		break;
+	case LAYER_TANH:
+		activation_tanh_backward(obj->obj);
+		break;
     default:
         LAST_ERROR = "Invalid layer type.";
         return 0;
@@ -358,9 +394,10 @@ int layer_free(struct layer *obj) {
             activation_softmax_free((struct activation_softmax*)(obj->obj));
             break;
         case LAYER_SIGMOID:
-            break;
         case LAYER_RELU:
-            break;
+		case LAYER_LEAKY_RELU:
+		case LAYER_TANH:
+			break;
         default:
             LAST_ERROR = "Invalid layer type.";
             return 0;

@@ -12,6 +12,7 @@
 #include "dropout.h"
 #include "conv2d.h"
 #include "maxpool2d.h"
+#include "leaky_relu.h"
 
 // Serialize a matrix's data.
 int serialize_matrix(struct matrix* obj, FILE* fp) {
@@ -72,6 +73,12 @@ int serialize_layer_params(struct layer* obj, FILE* fp) {
 		break;
 	case LAYER_DROPOUT:
 		if (fwrite(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
+			LAST_ERROR = "Failed to write file.";
+			return 0;
+		}
+		break;
+	case LAYER_LEAKY_RELU:
+		if (fwrite(&((struct activation_leaky_relu*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
 			LAST_ERROR = "Failed to write file.";
 			return 0;
 		}
@@ -146,6 +153,13 @@ int deserialize_layer_params(struct layer* obj, FILE* fp) {
 	case LAYER_DROPOUT:
 		// Dropout layer.
 		if (fread(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
+			LAST_ERROR = "Failed to read file.";
+			return 0;
+		}
+		break;
+	case LAYER_LEAKY_RELU:
+		// Leaky RELU layer.
+		if (fread(&((struct activation_leaky_relu*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
 			LAST_ERROR = "Failed to read file.";
 			return 0;
 		}

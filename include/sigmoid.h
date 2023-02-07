@@ -10,7 +10,7 @@
 extern char *LAST_ERROR;
 
 // The sigmoid activation function. The forward pass is calculated as
-// 1 / (1 + e^(-x)). The backward pass is calculated as d_output * x * (1-x).
+// 1 / (1 + e^(-x)). The backward pass is calculated as d_output * y * (1-y).
 struct activation_sigmoid {
     // The input and output size.
     int input_size, output_size;
