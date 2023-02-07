@@ -20,7 +20,10 @@ enum optimizer_type {
     OPTIMIZER_SGD,
 
     // Adam optimizer.
-    OPTIMIZER_ADAM
+    OPTIMIZER_ADAM,
+
+    // RMSProp optimizer.
+    OPTIMIZER_RMSPROP
 };
 
 // The generic optimizer object.

@@ -9,12 +9,13 @@
 int optimizer_sgd_conv2d_init(struct optimizer_sgd_conv2d *obj, 
                               struct layer_conv2d *layer, 
                               double learning_rate, double momentum, 
-                              double decay) {
+                              double decay, bool nesterov) {
     // Set the layer and the optimizer's parameters.
     obj->layer = layer;
     obj->learning_rate = learning_rate;
     obj->momentum = momentum;
     obj->decay = decay;
+	obj->nesterov = nesterov;
 
     // Initialize the momentum matrices.
     if (momentum) {
@@ -46,19 +47,35 @@ void optimizer_sgd_conv2d_update(struct optimizer_sgd_conv2d *obj, int iter) {
     }
 
     if (obj->momentum) {
-        // Use momentum.
+		if (!obj->nesterov) {
+        	// Use momentum.
 
-        // Update the weights.
-        for (int i = 0; i < obj->weight_m.size; i++) {
-            obj->weight_m.buffer[i] = obj->weight_m.buffer[i] * obj->momentum - obj->layer->d_weights.buffer[i] * learning_rate;
-            obj->layer->weights.buffer[i] += obj->weight_m.buffer[i];
-        }
+        	// Update the weights.
+        	for (int i = 0; i < obj->weight_m.size; i++) {
+            	obj->weight_m.buffer[i] = obj->weight_m.buffer[i] * obj->momentum - obj->layer->d_weights.buffer[i] * learning_rate;
+            	obj->layer->weights.buffer[i] += obj->weight_m.buffer[i];
+        	}
 
-        // Update the biases.
-        for (int i = 0; i < obj->bias_m.size; i++) {
-            obj->bias_m.buffer[i] = obj->bias_m.buffer[i] * obj->momentum - obj->layer->d_biases.buffer[i] * learning_rate;
-            obj->layer->biases.buffer[i] += obj->bias_m.buffer[i];
-        }
+        	// Update the biases.
+        	for (int i = 0; i < obj->bias_m.size; i++) {
+            	obj->bias_m.buffer[i] = obj->bias_m.buffer[i] * obj->momentum - obj->layer->d_biases.buffer[i] * learning_rate;
+            	obj->layer->biases.buffer[i] += obj->bias_m.buffer[i];
+        	}
+		} else {
+			// Use Nesterov mometum.
+
+        	// Update the weights.
+        	for (int i = 0; i < obj->weight_m.size; i++) {
+            	obj->weight_m.buffer[i] = obj->weight_m.buffer[i] * obj->momentum - obj->layer->d_weights.buffer[i] * learning_rate;
+            	obj->layer->weights.buffer[i] += obj->weight_m.buffer[i] * obj->momentum - obj->layer->d_weights.buffer[i] * learning_rate;
+        	}
+
+        	// Update the biases.
+        	for (int i = 0; i < obj->bias_m.size; i++) {
+            	obj->bias_m.buffer[i] = obj->bias_m.buffer[i] * obj->momentum - obj->layer->d_biases.buffer[i] * learning_rate;
+            	obj->layer->biases.buffer[i] += obj->bias_m.buffer[i] * obj->momentum - obj->layer->d_biases.buffer[i] * learning_rate;
+        	}
+		}
     } else {
         // Do not use momentum.
         for (int i = 0; i < obj->layer->weights.size; i++) {

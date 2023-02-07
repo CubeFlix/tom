@@ -19,11 +19,14 @@
 #include "relu.h"
 #include "sgd.h"
 #include "adam.h"
+#include "rmsprop.h"
 #include "sgd_conv2d.h"
 #include "adam_conv2d.h"
+#include "rmsprop_conv2d.h"
 #include "mse.h"
 #include "crossentropy.h"
 #include "binary_crossentropy.h"
+
 
 // Initialize a layer object. The layer should have its type, input size, and 
 // output size set. Requires the input matrix and the gradients from the
@@ -153,12 +156,14 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type,
         {
             // Stochastic gradient descent.
             double lr, mom, dec;
-            lr = va_arg(ap, double);
+            bool nesterov;
+	    	lr = va_arg(ap, double);
             mom = va_arg(ap, double);
             dec = va_arg(ap, double);
-            struct optimizer_sgd* sgd = calloc(1, sizeof(struct optimizer_sgd));
+            nesterov = (bool)va_arg(ap, int);
+	    	struct optimizer_sgd* sgd = calloc(1, sizeof(struct optimizer_sgd));
             obj->opt.obj = sgd;
-            if (!optimizer_sgd_init(sgd, obj->obj, lr, mom, dec)) {
+            if (!optimizer_sgd_init(sgd, obj->obj, lr, mom, dec, nesterov)) {
                 free(sgd);
                 return 0;
             }
@@ -181,6 +186,22 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type,
             }
             break;
         }
+		case OPTIMIZER_RMSPROP:
+		{
+	    	// RMSProp.
+	    	double lr, dec, epsilon, rho;
+	    	lr = va_arg(ap, double);
+	    	dec = va_arg(ap, double);
+	    	epsilon = va_arg(ap, double);
+	    	rho = va_arg(ap, double);
+	    	struct optimizer_rmsprop* rmsprop = calloc(1, sizeof(struct optimizer_rmsprop));
+	    	obj->opt.obj = rmsprop;
+	    	if (!optimizer_rmsprop_init(rmsprop, obj->obj, lr, dec, epsilon, rho)) {
+				free(rmsprop);
+				return 0;
+	    	}
+	    	break;
+		}
         default:
             LAST_ERROR = "Invalid optimizer type.";
             return 0;
@@ -192,12 +213,14 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type,
         {
             // Stochastic gradient descent.
             double lr, mom, dec;
+	    	bool nesterov;
             lr = va_arg(ap, double);
             mom = va_arg(ap, double);
             dec = va_arg(ap, double);
+	    	nesterov = (bool)va_arg(ap, int);
             struct optimizer_sgd_conv2d* sgd = calloc(1, sizeof(struct optimizer_sgd_conv2d));
             obj->opt.obj = sgd;
-            if (!optimizer_sgd_conv2d_init(sgd, obj->obj, lr, mom, dec)) {
+            if (!optimizer_sgd_conv2d_init(sgd, obj->obj, lr, mom, dec, nesterov)) {
                 free(sgd);
                 return 0;
             }
@@ -220,6 +243,22 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type,
             }
             break;
         }
+		case OPTIMIZER_RMSPROP:
+		{
+	    	// RMSProp.
+	    	double lr, dec, eps, rho;
+	    	lr = va_arg(ap, double);
+	    	dec = va_arg(ap, double);
+	    	eps = va_arg(ap, double);
+	    	rho = va_arg(ap, double);
+	    	struct optimizer_rmsprop_conv2d* rmsprop = calloc(1, sizeof(struct optimizer_rmsprop_conv2d));
+	    	obj->opt.obj = rmsprop;
+	    	if (!optimizer_rmsprop_conv2d_init(rmsprop, obj->obj, lr, dec, eps, rho)) {
+				free(rmsprop);
+				return 0;
+	    	}
+	    	break;
+		}
         default:
             LAST_ERROR = "Invalid optimizer type.";
             return 0;
@@ -341,7 +380,10 @@ int layer_free(struct layer *obj) {
             case OPTIMIZER_ADAM:
                 optimizer_adam_free((struct optimizer_adam*)(obj->opt.obj));
                 break;
-            default:
+            case OPTIMIZER_RMSPROP:
+				optimizer_rmsprop_free((struct optimizer_rmsprop*)(obj->opt.obj));
+				break;
+	    default:
                 LAST_ERROR = "Invalid optimizer type.";
                 return 0;
             }
@@ -354,6 +396,9 @@ int layer_free(struct layer *obj) {
             case OPTIMIZER_ADAM:
                 optimizer_adam_conv2d_free((struct optimizer_adam_conv2d*)(obj->opt.obj));
                 break;
+	    	case OPTIMIZER_RMSPROP:
+				optimizer_rmsprop_conv2d_free((struct optimizer_rmsprop_conv2d*)(obj->opt.obj));
+				break;
             default:
                 LAST_ERROR = "Invalid optimizer type.";
                 return 0;
@@ -383,6 +428,9 @@ int layer_update(struct layer* obj) {
             case OPTIMIZER_ADAM:
                 optimizer_adam_update(obj->opt.obj, obj->opt.iter);
                 break;
+	    	case OPTIMIZER_RMSPROP:
+				optimizer_rmsprop_update(obj->opt.obj, obj->opt.iter);
+				break;
             default:
                 LAST_ERROR = "Invalid optimizer type.";
                 return 0;
@@ -396,6 +444,9 @@ int layer_update(struct layer* obj) {
             case OPTIMIZER_ADAM:
                 optimizer_adam_conv2d_update(obj->opt.obj, obj->opt.iter);
                 break;
+	    	case OPTIMIZER_RMSPROP:
+				optimizer_rmsprop_conv2d_update(obj->opt.obj, obj->opt.iter);
+				break;
             default:
                 LAST_ERROR = "Invalid optimizer type.";
                 return 0;
@@ -785,6 +836,7 @@ int model_init_optimizers(struct model* obj, enum optimizer_type type, ...) {
 
             // Initialize the optimizer.
             if (!layer_init_optimizer(current, type, ap_copy)) {
+			    va_end(ap);
                 return 0;
             }
         }
