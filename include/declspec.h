@@ -1,5 +1,5 @@
 // declspec.h
-// DECLSPEC definition.
+// DLL DECLSPEC definition.
 
 #ifndef DECLSPEC_H
 #define DECLSPEC_H

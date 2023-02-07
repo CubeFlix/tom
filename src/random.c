@@ -9,7 +9,7 @@
 
 // Initialize the RNG.
 void random_init(void) {
-    srand(time(NULL)); 
+    srand((unsigned int)time(NULL)); 
 }
 
 // Generate a uniform random value from min to min+range.

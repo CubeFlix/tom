@@ -13,7 +13,13 @@ else()
 endif()
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
-target_link_libraries(tom m)
+
+find_library(MATH_LIBRARY m)
+if(MATH_LIBRARY)
+    target_link_libraries(tom PUBLIC ${MATH_LIBRARY})
+endif()
+
+add_compile_definitions(TOM_EXPORTS)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib/${PROJECT_NAME})
 
