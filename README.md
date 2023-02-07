@@ -1,6 +1,6 @@
 # tom
 
-a neural network written in c. see `mnist_test.c` for usage example.
+a neural network library written in c. 
 
 ## todo
 
@@ -18,8 +18,6 @@ a neural network written in c. see `mnist_test.c` for usage example.
 - [x] optimizers for conv2d layers
 - [x] model object
 - [x] mnist, iris, conv tests
-- [ ] misc functions
-- [ ] cifar?
 - [ ] rnn?
 - [ ] DOCUMENTATION
 - [x] clean
