@@ -13,67 +13,95 @@
 #include "maxpool2d.h"
 
 // Serialize a matrix's data.
-void serialize_matrix(struct matrix* obj, FILE* fp) {
+int serialize_matrix(struct matrix* obj, FILE* fp) {
 	// Serialize the matrix values.
-	fwrite(obj->buffer, sizeof(double), obj->size, fp);
+	if (fwrite(obj->buffer, sizeof(double), obj->size, fp) != sizeof(double) * obj->size) {
+		LAST_ERROR = "Failed to write file.";
+		return 0;
+	}
+	return 1;
 }
 
 // Deserialize a matrix's data.
-void deserialize_matrix(struct matrix* obj, FILE* fp) {
+int deserialize_matrix(struct matrix* obj, FILE* fp) {
 	// Deserialize the matrix values.
-	fread(obj->buffer, sizeof(double), obj->size, fp);
+	if (fread(obj->buffer, sizeof(double), obj->size, fp) != sizeof(double) * obj->size) {
+		LAST_ERROR = "Failed to read file.";
+		return 0;
+	}
+	return 1;
 }
 
 // Serialize a layer.
-void serialize_layer(struct layer* obj, FILE* fp) {
+int serialize_layer(struct layer* obj, FILE* fp) {
 	// Write the layer type.
-	fwrite(&obj->type, sizeof(enum layer_type), 1, fp);
+	if (fwrite(&obj->type, sizeof(enum layer_type), 1, fp) != sizeof(enum layer_type)) {
+		LAST_ERROR = "Failed to write file.";
+		return 0;
+    }
 
 	// Write the layer parameters.
-	fwrite(&obj->input_size, sizeof(int), 10, fp);
+	if (fwrite(&obj->input_size, sizeof(int), 10, fp) != sizeof(int) * 10) {
+		LAST_ERROR = "Failed to write file.";
+		return 0;
+	}
+
+	return 1;
 }
 
 // Serialize a layer's parameters.
-void serialize_layer_params(struct layer* obj, FILE* fp) {
+int serialize_layer_params(struct layer* obj, FILE* fp) {
 	// Write the trainable parameters.
 	switch (obj->type) {
 	case LAYER_DENSE:
-		serialize_matrix(&((struct layer_dense*)(obj->obj))->weights, fp);
-		serialize_matrix(&((struct layer_dense*)(obj->obj))->biases, fp);
+		if (!serialize_matrix(&((struct layer_dense*)(obj->obj))->weights, fp)) {
+			return 0;	
+		}
+		if (!serialize_matrix(&((struct layer_dense*)(obj->obj))->biases, fp)) {
+			return 0;
+		}
 		break;
 	case LAYER_CONV2D:
-		serialize_matrix(&((struct layer_conv2d*)(obj->obj))->weights, fp);
-		serialize_matrix(&((struct layer_conv2d*)(obj->obj))->biases, fp);
+		if (!serialize_matrix(&((struct layer_conv2d*)(obj->obj))->weights, fp)) {
+			return 0;	
+		}
+		if (!serialize_matrix(&((struct layer_conv2d*)(obj->obj))->biases, fp)) {
+			return 0;
+		}
 		break;
 	case LAYER_DROPOUT:
-		fwrite(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp);
+		if (fwrite(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp) != sizeof(double)) {
+			LAST_ERROR = "Failed to write file.";
+			return 0;
+		}
 		break;
 	default:
 		break;
 	}
+	return 1;
 }
 
 // Deserialize a layer and add it to a model.
-void deserialize_layer(struct model* obj, FILE* fp) {
+int deserialize_layer(struct model* obj, FILE* fp) {
 	// Read the layer type.
 	enum layer_type ltype;
-	fread(&ltype, sizeof(enum layer_type), 1, fp);
+	if (fread(&ltype, sizeof(enum layer_type), 1, fp) != sizeof(enum layer_type)) {LAST_ERROR = "Failed to read file."; return 0;}
 
 	// Read the layer parameters.
 	int input_size, output_size;
 	int input_channels, input_height, input_width;
 	int output_channels, output_height, output_width;
 	int filter_size, stride;
-	fread(&input_size, sizeof(int), 1, fp);
-	fread(&output_size, sizeof(int), 1, fp);
-	fread(&input_channels, sizeof(int), 1, fp);
-	fread(&input_height, sizeof(int), 1, fp);
-	fread(&input_width, sizeof(int), 1, fp);
-	fread(&output_channels, sizeof(int), 1, fp);
-	fread(&output_height, sizeof(int), 1, fp);
-	fread(&output_width, sizeof(int), 1, fp);
-	fread(&filter_size, sizeof(int), 1, fp);
-	fread(&stride, sizeof(int), 1, fp);
+	if (fread(&input_size, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&output_size, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&input_channels, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&input_height, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&input_width, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&output_channels, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&output_height, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&output_width, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&filter_size, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&stride, sizeof(int), 1, fp) != sizeof(int)) {LAST_ERROR = "Failed to read file."; return 0;}
 
 	switch (ltype) {
 	case LAYER_CONV2D:
@@ -88,52 +116,78 @@ void deserialize_layer(struct model* obj, FILE* fp) {
 		model_add_layer(obj, ltype, input_size, output_size);
 		break;
 	}
+	
+	return 1;
 }
 
 // Deserialize a layer's parameters.
-void deserialize_layer_params(struct layer* obj, FILE* fp) {
+int deserialize_layer_params(struct layer* obj, FILE* fp) {
 	switch (obj->type) {
 	case LAYER_CONV2D:
 		// Conv 2D layer.
-		deserialize_matrix(&((struct layer_conv2d*)(obj->obj))->weights, fp);
-		deserialize_matrix(&((struct layer_conv2d*)(obj->obj))->biases, fp);
+		if (!deserialize_matrix(&((struct layer_conv2d*)(obj->obj))->weights, fp)) {
+			return 0;
+		}
+		if (!deserialize_matrix(&((struct layer_conv2d*)(obj->obj))->biases, fp)) {
+			return 0;
+		}
 		break;
 	case LAYER_DENSE:
 		// Dense layer.
-		deserialize_matrix(&((struct layer_dense*)(obj->obj))->weights, fp);
-		deserialize_matrix(&((struct layer_dense*)(obj->obj))->biases, fp);
+		if (!deserialize_matrix(&((struct layer_dense*)(obj->obj))->weights, fp)) {
+			return 0;
+		}
+		if (!deserialize_matrix(&((struct layer_dense*)(obj->obj))->biases, fp)) {
+			return 0;
+		}
 		break;
 	case LAYER_DROPOUT:
 		// Dropout layer.
-		fread(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp);
+		if (fread(&((struct layer_dropout*)(obj->obj))->rate, sizeof(double), 1, fp) != sizeof(double)) {
+			LAST_ERROR = "Failed to read file.";
+			return 0;
+		}
 		break;
 	default:
 		break;
 	}
+	return 1;
 }
 
 // Serialize a model. We serialize in two passes, once for layer information,
 // and again for layer parameters.
-void serialize_model(struct model* obj, FILE* fp) {
+int serialize_model(struct model* obj, FILE* fp) {
 	// Write the number of layers.
-	fwrite(&obj->n_layers, sizeof(int), 1, fp);
+	if (fwrite(&obj->n_layers, sizeof(int), 1, fp) != sizeof(int)) {
+		LAST_ERROR = "Failed to write file.";
+		return 0;
+	}
 
 	// Write the loss type.
-	fwrite(&obj->loss.type, sizeof(enum loss_type), 1, fp);
+	if (fwrite(&obj->loss.type, sizeof(enum loss_type), 1, fp) != sizeof(int)) {
+		LAST_ERROR = "Failed to write file.";
+		return 0;
+	}
 
 	// Write each layer.
 	struct layer* current = obj->first;
 	do {
-		serialize_layer(current, fp);
+		if (!serialize_layer(current, fp)) {
+			return 0;
+		}
 		current = current->next;
 	} while (current != NULL);
 	
 	// Write the layer parameters.
 	current = obj->first;
 	do {
-		serialize_layer_params(current, fp);
+		if (!serialize_layer_params(current, fp)) {
+			return 0;
+		}
 		current = current->next;
 	} while (current != NULL);
+	
+	return 1;
 }
 
 // Deserialize a model. Again, deserialize in two passes, loading layer data,
@@ -141,14 +195,20 @@ void serialize_model(struct model* obj, FILE* fp) {
 int deserialize_model(struct model* obj, FILE* fp) {
 	// Get the number of layers.
 	int n_layers;
-	fread(&n_layers, sizeof(int), 1, fp);
+	if (fread(&n_layers, sizeof(int), 1, fp) != sizeof(int)) {
+		return 0;
+	}
 
 	// Get the loss type.
-	fread(&obj->loss.type, sizeof(enum loss_type), 1, fp);
+	if (fread(&obj->loss.type, sizeof(enum loss_type), 1, fp) != sizeof(int)) {
+		return 0;
+	}
 
 	// Load each layer.
 	for (int i = 0; i < n_layers; i++) {
-		deserialize_layer(obj, fp);
+		if (!deserialize_layer(obj, fp)) {
+			return 0;
+		}
 	}
 
 	// Finalize the model.
@@ -159,7 +219,9 @@ int deserialize_model(struct model* obj, FILE* fp) {
 	// Load the layer parameters.
 	struct layer* current = obj->first;
 	do {
-		deserialize_layer_params(current, fp);
+		if (!deserialize_layer_params(current, fp)) {
+			return 0;
+		}
 		current = current->next;
 	} while (current != NULL);
 

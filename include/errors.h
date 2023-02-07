@@ -9,7 +9,7 @@
 extern char *LAST_ERROR;
 
 // Print the last error to stdout.
-extern TOM_API void error_print();
+extern TOM_API void error_print(void);
 
 // Macro to quit on error.
 #define QUIT_ON_ERROR(x) { \

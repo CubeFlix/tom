@@ -8,7 +8,7 @@
 #include "random.h"
 
 // Initialize the RNG.
-void random_init() {
+void random_init(void) {
     srand(time(NULL)); 
 }
 

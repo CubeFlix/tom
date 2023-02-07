@@ -13,6 +13,7 @@ else()
 endif()
 
 add_library(${PROJECT_NAME} SHARED ${SOURCES})
+target_link_libraries(tom m)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION lib/${PROJECT_NAME})
 

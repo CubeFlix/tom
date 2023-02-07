@@ -1,6 +1,13 @@
 // tom.h
 // Headers to include Tom.
 
+#ifndef TOM_H
+#define TOM_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "errors.h"
 #include "adam.h"
 #include "binary_crossentropy.h"
@@ -18,3 +25,9 @@
 #include "maxpool2d.h"
 #include "model.h"
 #include "serialize.h"
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
