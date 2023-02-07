@@ -29,8 +29,10 @@ int optimizer_sgd_init(struct optimizer_sgd *obj, struct layer_dense *layer,
 
 // Free the matrices owned by the optimizer.
 void optimizer_sgd_free(struct optimizer_sgd *obj) {
-    matrix_free(&obj->weight_m);
-    matrix_free(&obj->bias_m);
+    if (obj->momentum) {
+    	matrix_free(&obj->weight_m);
+    	matrix_free(&obj->bias_m);
+    }
 }
 
 // Update the layer's weights and biases.

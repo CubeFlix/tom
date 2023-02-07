@@ -31,8 +31,10 @@ int optimizer_sgd_conv2d_init(struct optimizer_sgd_conv2d *obj,
 
 // Free the matrices owned by the optimizer.
 void optimizer_sgd_conv2d_free(struct optimizer_sgd_conv2d *obj) {
-    matrix_free(&obj->weight_m);
-    matrix_free(&obj->bias_m);
+    if (obj->momentum) {
+    	matrix_free(&obj->weight_m);
+    	matrix_free(&obj->bias_m);
+    }
 }
 
 // Update the layer's weights and biases.
