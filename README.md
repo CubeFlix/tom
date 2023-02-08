@@ -14,7 +14,9 @@ a neural network library written in c.
 - [x] pooling
 - [x] optimization with multiplication over division
 - [x] cmake
-- [ ] more activations and functions
+- [x] more activations and functions
+- [ ] padding layer
+- [ ] dataset shuffling
 - [x] optimizers for conv2d layers
 - [x] model object
 - [x] mnist, iris, conv tests
