@@ -26,6 +26,7 @@
 #include "adam_conv2d.h"
 #include "rmsprop_conv2d.h"
 #include "mse.h"
+#include "mae.h"
 #include "crossentropy.h"
 #include "binary_crossentropy.h"
 
@@ -523,6 +524,17 @@ int loss_init(struct loss* obj, struct matrix* input, struct matrix* y,
         obj->obj = mse;
         break;
     }
+    case LOSS_MAE:
+    {
+        // Initialize the MAE loss.
+        struct loss_mae* mae = calloc(1, sizeof(struct loss_mae));
+        if (!loss_mae_init(mae, input->n_cols, input, y, output, d_input)) {
+            free(mae);
+            return 0;
+        }
+        obj->obj = mae;
+        break;
+    }
     case LOSS_CROSSENTROPY:
     {
         // Initialize the crossentropy loss.
@@ -559,6 +571,9 @@ int loss_forward(struct loss *obj) {
     case LOSS_MSE:
         obj->batch_loss = loss_mse_forward(obj->obj);
         break;
+    case LOSS_MAE:
+        obj->batch_loss = loss_mae_forward(obj->obj);
+        break;
     case LOSS_CROSSENTROPY:
         obj->batch_loss = loss_crossentropy_forward(obj->obj);
         break;
@@ -579,6 +594,9 @@ int loss_backward(struct loss *obj) {
     case LOSS_MSE:
         loss_mse_backward(obj->obj);
         break;
+    case LOSS_MAE:
+        loss_mae_backward(obj->obj);
+        break;
     case LOSS_CROSSENTROPY:
         loss_crossentropy_backward(obj->obj);
         break;
@@ -597,9 +615,8 @@ int loss_backward(struct loss *obj) {
 int loss_free(struct loss *obj) {
     switch (obj->type) {
         case LOSS_MSE:
-            break;
+        case LOSS_MAE:        
         case LOSS_CROSSENTROPY:
-            break;
         case LOSS_BINARY_CROSSENTROPY:
             break;
         default:

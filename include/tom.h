@@ -15,6 +15,7 @@ extern "C" {
 #include "dense.h"
 #include "matrix.h"
 #include "mse.h"
+#include "mae.h"
 #include "random.h"
 #include "relu.h"
 #include "leaky_relu.h"

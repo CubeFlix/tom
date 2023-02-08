@@ -131,6 +131,9 @@ enum loss_type {
     // Mean squared error.
     LOSS_MSE,
 
+    // Mean absolute error.
+    LOSS_MAE,
+
     // Cross-entropy loss.
     LOSS_CROSSENTROPY,
 
