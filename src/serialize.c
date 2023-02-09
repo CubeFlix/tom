@@ -12,6 +12,7 @@
 #include "dropout.h"
 #include "conv2d.h"
 #include "maxpool2d.h"
+#include "padding2d.h"
 #include "leaky_relu.h"
 
 // Serialize a matrix's data.
@@ -43,7 +44,7 @@ int serialize_layer(struct layer* obj, FILE* fp) {
     }
 
 	// Write the layer parameters.
-	if (fwrite(&obj->input_size, sizeof(int), 10, fp) != 10) {
+	if (fwrite(&obj->input_size, sizeof(int), 12, fp) != 12) {
 		LAST_ERROR = "Failed to write file.";
 		return 0;
 	}
@@ -68,6 +69,12 @@ int serialize_layer_params(struct layer* obj, FILE* fp) {
 			return 0;	
 		}
 		if (!serialize_matrix(&((struct layer_conv2d*)(obj->obj))->biases, fp)) {
+			return 0;
+		}
+		break;
+	case LAYER_PADDING2D:
+		if (fwrite(&((struct layer_padding2d*)(obj->obj))->type, sizeof(enum padding_type), 1, fp) != 1) {
+			LAST_ERROR = "Failed to write file.";
 			return 0;
 		}
 		break;
@@ -101,6 +108,7 @@ int deserialize_layer(struct model* obj, FILE* fp) {
 	int input_channels, input_height, input_width;
 	int output_channels, output_height, output_width;
 	int filter_size, stride;
+	int padding_x, padding_y;
 	if (fread(&input_size, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
 	if (fread(&output_size, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
 	if (fread(&input_channels, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
@@ -111,6 +119,8 @@ int deserialize_layer(struct model* obj, FILE* fp) {
 	if (fread(&output_width, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
 	if (fread(&filter_size, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
 	if (fread(&stride, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&padding_x, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
+	if (fread(&padding_y, sizeof(int), 1, fp) != 1) {LAST_ERROR = "Failed to read file."; return 0;}
 
 	switch (ltype) {
 	case LAYER_CONV2D:
@@ -120,6 +130,10 @@ int deserialize_layer(struct model* obj, FILE* fp) {
 	case LAYER_MAXPOOL2D:
 		// Max pooling 2D layer.
 		model_add_maxpool2d_layer(obj, input_channels, input_height, input_width, filter_size, stride);
+		break;
+	case LAYER_PADDING2D:
+		// Padding 2D layer.
+		model_add_padding2d_layer(obj, input_channels, input_height, input_width, padding_x, padding_y);
 		break;
 	default:
 		model_add_layer(obj, ltype, input_size, output_size);
@@ -147,6 +161,13 @@ int deserialize_layer_params(struct layer* obj, FILE* fp) {
 			return 0;
 		}
 		if (!deserialize_matrix(&((struct layer_dense*)(obj->obj))->biases, fp)) {
+			return 0;
+		}
+		break;
+	case LAYER_PADDING2D:
+		// Padding 2D layer.
+		if (fread(&((struct layer_padding2d*)(obj->obj))->type, sizeof(enum padding_type), 1, fp) != 1) {
+			LAST_ERROR = "Failed to read file.";
 			return 0;
 		}
 		break;

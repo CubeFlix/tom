@@ -13,6 +13,7 @@
 #include "dense.h"
 #include "conv2d.h"
 #include "maxpool2d.h"
+#include "padding2d.h"
 #include "dropout.h"
 #include "sigmoid.h"
 #include "softmax.h"
@@ -85,6 +86,17 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs,
             return 0;
         }
         obj->obj = maxpool2d;
+        break;
+    }
+    case LAYER_PADDING2D:
+    {
+        // Initialize the padding 2D layer.
+        struct layer_padding2d* padding2d = calloc(1, sizeof(struct layer_padding2d));
+        if (!layer_padding2d_init(padding2d, obj->input_channels, obj->input_height, obj->input_width, obj->padding_x, obj->padding_y, PADDING_ZERO, inputs, current_output, current_gradient, d_prev)) {
+            free(padding2d);
+            return 0;
+        }
+        obj->obj = padding2d;
         break;
     }
     case LAYER_DROPOUT:
@@ -309,6 +321,11 @@ int layer_forward(struct layer *obj, bool training) {
     case LAYER_MAXPOOL2D:
         layer_maxpool2d_forward(obj->obj);
         break;
+    case LAYER_PADDING2D:
+        if (!layer_padding2d_forward(obj->obj)) {
+            return 0;
+        }
+        break;
     case LAYER_DROPOUT:
         if (training) {
             layer_dropout_forward(obj->obj);
@@ -350,6 +367,9 @@ int layer_backward(struct layer *obj) {
     case LAYER_MAXPOOL2D:
         layer_maxpool2d_backward(obj->obj);
         break;
+    case LAYER_PADDING2D:
+        layer_padding2d_backward(obj->obj);
+        break;
     case LAYER_DROPOUT:
         layer_dropout_backward(obj->obj);
         break;
@@ -387,6 +407,9 @@ int layer_free(struct layer *obj) {
             break;
         case LAYER_MAXPOOL2D:
             layer_maxpool2d_free((struct layer_maxpool2d*)(obj->obj));
+            break;
+        case LAYER_PADDING2D:
+            layer_padding2d_free((struct layer_padding2d*)(obj->obj));
             break;
         case LAYER_DROPOUT:
             layer_dropout_free((struct layer_dropout*)(obj->obj));
@@ -780,6 +803,45 @@ struct layer* model_add_maxpool2d_layer(struct model* obj,
     l->output_width = CALC_MAXPOOL2D_OUTPUT_DIM(input_width, pool_size, stride);
     l->filter_size = pool_size;
     l->stride = stride;
+
+    // Calculate the input and output sizes.
+    l->input_size = input_channels * input_height * input_width;
+    l->output_size = input_channels * l->output_height * l->output_width;
+
+    // If this is the first layer, set the first layer.
+    if (!obj->n_layers) {
+        obj->first = l;
+    }
+    else {
+        // If this is not the first layer, set the "next" value for the 
+        // previous layer.
+        l->prev->next = l;
+    }
+
+    obj->n_layers++;
+
+    return l;
+}
+
+// Add a padding 2D layer without initializing it. Returns the layer if 
+// successful.
+struct layer* model_add_padding2d_layer(struct model* obj,
+        int input_channels, int input_height,
+        int input_width, int padding_x, int padding_y) {
+
+    // Create the layer and set the values.
+    struct layer* l = (struct layer*)calloc(1, sizeof(struct layer));
+    l->prev = obj->last;
+    obj->last = l;
+    l->type = LAYER_PADDING2D;
+    l->input_channels = input_channels;
+    l->input_height = input_height;
+    l->input_width = input_width;
+    l->output_channels = input_channels;
+    l->output_height = CALC_PADDING2D_OUTPUT_DIM(input_height, padding_y);
+    l->output_width = CALC_PADDING2D_OUTPUT_DIM(input_width, padding_x);
+    l->padding_x = padding_x;
+    l->padding_y = padding_y;
 
     // Calculate the input and output sizes.
     l->input_size = input_channels * input_height * input_width;

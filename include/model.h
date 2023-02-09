@@ -49,6 +49,9 @@ enum layer_type {
     // 2D max pool layer.
     LAYER_MAXPOOL2D,
 
+    // 2D padding layer.
+    LAYER_PADDING2D,
+
     // Dropout layer.
     LAYER_DROPOUT,
 
@@ -99,6 +102,9 @@ struct layer {
 
     // Optional parameters for conv and max pooling 2D layers.
     int filter_size, stride;
+
+    // Optional parameters for padding 2D layers.
+    int padding_x, padding_y;
 };
 
 // Initialize a layer object. The layer should have its type, input size, and 
@@ -221,6 +227,12 @@ extern TOM_API struct layer* model_add_maxpool2d_layer(struct model* obj,
     int input_channels, int input_height,
     int input_width, int pool_size,
     int stride);
+
+// Add a padding 2D layer without initializing it. Returns the layer if 
+// successful.
+extern TOM_API struct layer* model_add_padding2d_layer(struct model* obj,
+    int input_channels, int input_height,
+    int input_width, int padding_x, int padding_y);
 
 // Set the layer's loss.
 extern TOM_API void model_set_loss(struct model *obj, enum loss_type type) ;

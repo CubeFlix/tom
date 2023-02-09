@@ -25,6 +25,7 @@ extern "C" {
 #include "dropout.h"
 #include "conv2d.h"
 #include "maxpool2d.h"
+#include "padding2d.h"
 #include "model.h"
 #include "serialize.h"
 #include "version.h"
