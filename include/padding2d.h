@@ -11,6 +11,18 @@
 
 extern char *LAST_ERROR;
 
+// Padding type enum.
+enum padding_type {
+    // Zero padding, or "same padding".
+    PADDING_ZERO,
+
+    // Symmetric padding.
+    PADDING_SYMMETRIC,
+
+    // Reflection padding.
+    PADDING_REFLECTION
+};
+
 // The 2D padding layer.
 struct layer_padding2d {
     // The input and output dimensions.
@@ -41,18 +53,6 @@ struct layer_padding2d {
     
     // Gradients on the outputs and inputs, respectively.
     struct matrix *d_outputs, *d_inputs;
-};
-
-// Padding type enum.
-enum padding_type {
-    // Zero padding, or "same padding".
-    PADDING_ZERO,
-
-    // Symmetric padding.
-    PADDING_SYMMETRIC,
-
-    // Reflection padding.
-    PADDING_REFLECTION
 };
 
 // Calculate the output dimension.
