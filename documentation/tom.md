@@ -17,7 +17,7 @@ Currently, `tom` supports the following layer types:
 `tom` also supports the following optimizers:
 
 - Stochastic Gradient Descent (SGD) optimizer, including Nesterov momentum ([`optimizer_sgd`](optimizers.md#optimizer_sgd), [`optimizer_sgd_conv2d`](optimizers.md#optimizer_sgd_conv2d))
-- Adam optimizer (Kingma & Ba, 2014) ([`optimizer_adam.c`](optimizers.md#optimizer_adam), [`optimizer_adam_conv2d`](optimizers.md#optimizer_adam_conv2d))
+- Adam optimizer (Kingma & Ba, 2014) ([`optimizer_adam`](optimizers.md#optimizer_adam), [`optimizer_adam_conv2d`](optimizers.md#optimizer_adam_conv2d))
 - RMSProp optimizer (Hinton, no paper) ([`optimizer_rmsprop`](optimizers.md#optimizer_rmsprop), [`optimizer_rmsprop_conv2d`](optimizers.md#optimizer_rmsprop_conv2d))
 
 Finally, `tom` supports the following loss functions:

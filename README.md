@@ -4,28 +4,28 @@
 
 Currently, `tom` supports the following layer types:
 
-- Dense (fully-connected) layers ([`layer_dense`](layers.md#layer_dense))
-- Convolutional 2D layers ([`layer_conv2d`](layers.md#layer_conv2d))
-- Max-pooling 2D layers ([`layer_maxpool2d`](layers.md#layer_maxpool2d))
-- Padding 2D layers ([`layer_padding2d.c`](layers.md#layer_padding2d))
-- Dropout layers ([`layer_dropout`](layers.md#layer_dropout))
-- ReLU and Leaky ReLU activation layers ([`layer_relu`](layers.md#layer_relu), [`layer_leaky_relu.c`](layers.md#layer_leaky_relu))
-- Softmax activation layers ([`layer_softmax`](layers.md#layer_softmax))
-- Sigmoid activation layers ([`layer_sigmoid`](layers.md#layer_sigmoid))
-- Hyperbolic tangent (tanh) activation layers ([`layer_tanh`](layers.md#layer_tanh))
+- Dense (fully-connected) layers ([`layer_dense`](documentation/layers.md#layer_dense))
+- Convolutional 2D layers ([`layer_conv2d`](documentation/layers.md#layer_conv2d))
+- Max-pooling 2D layers ([`layer_maxpool2d`](documentation/layers.md#layer_maxpool2d))
+- Padding 2D layers ([`layer_padding2d.c`](documentation/layers.md#layer_padding2d))
+- Dropout layers ([`layer_dropout`](documentation/layers.md#layer_dropout))
+- ReLU and Leaky ReLU activation layers ([`layer_relu`](documentation/layers.md#layer_relu), [`layer_leaky_relu.c`](documentation/layers.md#layer_leaky_relu))
+- Softmax activation layers ([`layer_softmax`](documentation/layers.md#layer_softmax))
+- Sigmoid activation layers ([`layer_sigmoid`](documentation/layers.md#layer_sigmoid))
+- Hyperbolic tangent (tanh) activation layers ([`layer_tanh`](documentation/layers.md#layer_tanh))
 
 `tom` also supports the following optimizers:
 
-- Stochastic Gradient Descent (SGD) optimizer, including Nesterov momentum ([`optimizer_sgd`](optimizers.md#optimizer_sgd), [`optimizer_sgd_conv2d`](optimizers.md#optimizer_sgd_conv2d))
-- Adam optimizer (Kingma & Ba, 2014) ([`optimizer_adam.c`](optimizers.md#optimizer_adam), [`optimizer_adam_conv2d`](optimizers.md#optimizer_adam_conv2d))
-- RMSProp optimizer (Hinton, no paper) ([`optimizer_rmsprop`](optimizers.md#optimizer_rmsprop), [`optimizer_rmsprop_conv2d`](optimizers.md#optimizer_rmsprop_conv2d))
+- Stochastic Gradient Descent (SGD) optimizer, including Nesterov momentum ([`optimizer_sgd`](documentation/optimizers.md#optimizer_sgd), [`optimizer_sgd_conv2d`](documentation/optimizers.md#optimizer_sgd_conv2d))
+- Adam optimizer (Kingma & Ba, 2014) ([`optimizer_adam`](documentation/optimizers.md#optimizer_adam), [`optimizer_adam_conv2d`](documentation/optimizers.md#optimizer_adam_conv2d))
+- RMSProp optimizer (Hinton, no paper) ([`optimizer_rmsprop`](documentation/optimizers.md#optimizer_rmsprop), [`optimizer_rmsprop_conv2d`](documentation/optimizers.md#optimizer_rmsprop_conv2d))
 
 Finally, `tom` supports the following loss functions:
 
-- Mean Squared Error (MSE) loss ([`loss_mse`](loss.md#loss_mse))
-- Mean Absolute Error (MAE) loss ([`loss_mae`](loss.md#loss_mae))
-- Cross-entropy loss ([`loss_crossentropy`](loss.md#loss_crossentropy))
-- Binary cross-entropy loss ([`loss_binary_crossentropy`](loss.md#loss_binary_crossentropy))
+- Mean Squared Error (MSE) loss ([`loss_mse`](documentation/loss.md#loss_mse))
+- Mean Absolute Error (MAE) loss ([`loss_mae`](documentation/loss.md#loss_mae))
+- Cross-entropy loss ([`loss_crossentropy`](documentation/loss.md#loss_crossentropy))
+- Binary cross-entropy loss ([`loss_binary_crossentropy`](documentation/loss.md#loss_binary_crossentropy))
 
 ## Usage
 
