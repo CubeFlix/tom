@@ -8,7 +8,7 @@
 #include "conv2d.h"
 #include "declspec.h"
 
-// The Root Mean Square Propegation optimizer algorithm for conv 2D layers.
+// The Root Mean Square Propagation optimizer algorithm for conv 2D layers.
 struct optimizer_rmsprop_conv2d {
     // The conv 2D layer to optimize.
     struct layer_conv2d *layer;
