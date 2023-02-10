@@ -210,7 +210,7 @@ extern TOM_API int model_init(struct model *obj, int n_samples);
 // with the loss.
 extern TOM_API int model_free(struct model *obj);
 
-// Add and initialize a layer.
+// Add a layer without initializing it. Returns the layer if successful.
 extern TOM_API struct layer* model_add_layer(struct model *obj, enum layer_type type, 
                               int input_size, int output_size);
 
