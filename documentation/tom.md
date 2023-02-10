@@ -9,10 +9,10 @@ Currently, `tom` supports the following layer types:
 - Max-pooling 2D layers ([`layer_maxpool2d`](layers.md#layer_maxpool2d))
 - Padding 2D layers ([`layer_padding2d.c`](layers.md#layer_padding2d))
 - Dropout layers ([`layer_dropout`](layers.md#layer_dropout))
-- ReLU and Leaky ReLU activation layers ([`layer_relu`](layers.md#layer_relu), [`layer_leaky_relu.c`](layers.md#layer_leaky_relu))
-- Softmax activation layers ([`layer_softmax`](layers.md#layer_softmax))
-- Sigmoid activation layers ([`layer_sigmoid`](layers.md#layer_sigmoid))
-- Hyperbolic tangent (tanh) activation layers ([`layer_tanh`](layers.md#layer_tanh))
+- ReLU and Leaky ReLU activation layers ([`layer_relu`](layers.md#activation_relu), [`layer_leaky_relu`](layers.md#activation_leaky_relu))
+- Softmax activation layers ([`layer_softmax`](layers.md#activation_softmax))
+- Sigmoid activation layers ([`layer_sigmoid`](layers.md#activation_sigmoid))
+- Hyperbolic tangent (tanh) activation layers ([`layer_tanh`](layers.md#activation_tanh))
 
 `tom` also supports the following optimizers:
 
