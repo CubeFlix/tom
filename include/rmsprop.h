@@ -8,7 +8,7 @@
 #include "dense.h"
 #include "declspec.h"
 
-// The Root Mean Square Propegation optimizer algorithm for dense layers.
+// The Root Mean Square Propagation optimizer algorithm for dense layers.
 struct optimizer_rmsprop {
     // The dense layer to optimize.
     struct layer_dense *layer;
