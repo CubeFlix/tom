@@ -51,10 +51,10 @@ int main(void) {
 
 ## Documentation
 
-- [Examples](documentation/examples.md)
-- [Model](documentation/model.md)
-- [Matrix](documentation/matrix.md)
-- [Layers](documentation/layers.md)
-- [Loss](documentation/loss.md)
-- [Optimizers](documentation/optimizers.md)
-- [Misc Functions](documentation/misc.md)
+- [Examples](examples.md)
+- [Model](model.md)
+- [Matrix](matrix.md)
+- [Layers](layers.md)
+- [Loss](loss.md)
+- [Optimizers](optimizers.md)
+- [Misc Functions](misc.md)
