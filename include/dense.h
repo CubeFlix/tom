@@ -40,7 +40,7 @@ struct layer_dense {
     double l1_weights, l1_biases, l2_weights, l2_biases;
 };
 
-// Dense layer weight initializers. 
+// Dense and conv 2D layer weight initializers. 
 enum weight_initializer {
     // Generates zeros (0.0).
     WI_ZEROS,
@@ -68,7 +68,7 @@ enum weight_initializer {
     WI_HE_UNIFORM
 };
 
-// Dense layer bias initializers.
+// Dense and conv 2D layer bias initializers.
 enum bias_initializer {
     BI_ZEROS,
     BI_ONES
