@@ -11,7 +11,8 @@ extern char *LAST_ERROR;
 
 // The softmax activation function. The forward pass is calculated as
 // e^x/sum(e^x). The forward pass can be calculated in a numerically unstable
-// method or numerically stable method. The backward pass is calculated as .
+// method or numerically stable method. The backward pass is calculated as 
+// (diag(yhat) - yhat^T * yhat).
 struct activation_softmax {
     // The input and output size.
     int input_size, output_size;
