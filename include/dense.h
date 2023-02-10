@@ -68,7 +68,7 @@ enum weight_initializer {
     WI_HE_UNIFORM
 };
 
-// Dense amd conv 2D layer bias initializers.
+// Dense and conv 2D layer bias initializers.
 enum bias_initializer {
     BI_ZEROS,
     BI_ONES
