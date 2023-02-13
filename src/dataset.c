@@ -29,7 +29,7 @@ int dataset_shuffle(struct matrix *X, struct matrix *Y) {
 
     if (n > 1) {
         size_t i;
-        for (i = 0; i < n - 1; ++i) {
+        for (i = 0; i < (size_t)(n - 1); ++i) {
             size_t rnd = (size_t) rand();
             size_t j = i + rnd / (RAND_MAX / (n - i) + 1);
 
