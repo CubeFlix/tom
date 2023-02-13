@@ -1,5 +1,19 @@
 # Miscellaneous Functions
 
+## Dataset Functions
+
+### `int dataset_shuffle(struct matrix *X, struct matrix *Y)`
+
+Shuffle a dataset. Shuffles assuming the dimensions of each matrix are (n_samples, size).
+
+### `void dataset_scale(struct matrix *X, double max, double min)`
+
+Scale a dataset between [min, max].
+
+### `void dataset_normalize(struct matrix *X)`
+
+Normalize a dataset using the L2 norm.
+
 ## Version
 
 ### `const char* tom_version(void)`
@@ -67,6 +81,10 @@ extern char *LAST_ERROR;
 ### `void print_last_error(void)`
 
 Print the last error to stdout.
+
+### `char *get_last_error(void)`
+
+Return the last error.
 
 ### `QUIT_ON_ERROR(x)`
 

@@ -11,3 +11,8 @@ char *LAST_ERROR;
 void print_last_error(void) {
     printf("%s\n", LAST_ERROR);
 }
+
+// Return the last error.
+char *get_last_error(void) {
+    return LAST_ERROR;
+}
