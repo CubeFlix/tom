@@ -68,7 +68,10 @@ enum layer_type {
     LAYER_SOFTMAX,
 	
 	// Tanh layer.
-	LAYER_TANH
+	LAYER_TANH,
+    
+    // Batch normalization layer.
+    LAYER_NORMALIZATION
 };
 
 // The generic layer object. 
