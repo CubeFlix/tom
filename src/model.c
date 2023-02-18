@@ -30,6 +30,10 @@
 #include "mae.h"
 #include "crossentropy.h"
 #include "binary_crossentropy.h"
+#include "quadratic.h"
+#include "sgd_quadratic.h"
+#include "adam_quadratic.h"
+#include "rmsprop_quadratic.h"
 
 
 // Initialize a layer object. The layer should have its type, input size, and 
@@ -165,6 +169,18 @@ int layer_init(struct layer *obj, int n_samples, struct matrix *inputs,
 		obj->obj = tanh;
 		break;
 	}
+    case LAYER_QUADRATIC:
+    {
+        // Initialize the quadratic layer.
+        struct layer_quadratic* quadratic = calloc(1, sizeof(struct layer_quadratic));
+        if (!layer_quadratic_init(quadratic, obj->input_size, obj->output_size, inputs, current_output, current_gradient, d_prev)) {
+            free(quadratic);
+            return 0;
+        }
+        obj->trainable = true;
+        obj->obj = quadratic;
+        break;
+    }
     default:
         LAST_ERROR = "Invalid layer type.";
         return 0;
@@ -301,6 +317,63 @@ int layer_init_optimizer(struct layer* obj, enum optimizer_type type,
             return 0;
         }
         break;
+    case LAYER_QUADRATIC:
+        switch (type) {
+        case OPTIMIZER_SGD:
+        {
+            // Stochastic gradient descent.
+            double lr, mom, dec;
+	    	bool nesterov;
+            lr = va_arg(ap, double);
+            mom = va_arg(ap, double);
+            dec = va_arg(ap, double);
+	    	nesterov = (bool)va_arg(ap, int);
+            struct optimizer_sgd_quadratic* sgd = calloc(1, sizeof(struct optimizer_sgd_quadratic));
+            obj->opt.obj = sgd;
+            if (!optimizer_sgd_quadratic_init(sgd, obj->obj, lr, mom, dec, nesterov)) {
+                free(sgd);
+                return 0;
+            }
+            break;
+        }
+        case OPTIMIZER_ADAM:
+        {
+            // Adam.
+            double lr, b1, b2, dec, eps;
+            lr = va_arg(ap, double);
+            b1 = va_arg(ap, double);
+            b2 = va_arg(ap, double);
+            dec = va_arg(ap, double);
+            eps = va_arg(ap, double);
+            struct optimizer_adam_quadratic* adam = calloc(1, sizeof(struct optimizer_adam_quadratic));
+            obj->opt.obj = adam;
+            if (!optimizer_adam_quadratic_init(adam, obj->obj, lr, b1, b2, dec, eps)) {
+                free(adam);
+                return 0;
+            }
+            break;
+        }
+		case OPTIMIZER_RMSPROP:
+		{
+	    	// RMSProp.
+	    	double lr, dec, eps, rho;
+	    	lr = va_arg(ap, double);
+	    	dec = va_arg(ap, double);
+	    	eps = va_arg(ap, double);
+	    	rho = va_arg(ap, double);
+	    	struct optimizer_rmsprop_quadratic* rmsprop = calloc(1, sizeof(struct optimizer_rmsprop_quadratic));
+	    	obj->opt.obj = rmsprop;
+	    	if (!optimizer_rmsprop_quadratic_init(rmsprop, obj->obj, lr, dec, eps, rho)) {
+				free(rmsprop);
+				return 0;
+	    	}
+	    	break;
+		}
+        default:
+            LAST_ERROR = "Invalid optimizer type.";
+            return 0;
+        }
+        break;
     default:
         LAST_ERROR = "Layer is untrainable; cannot initialize optimizer.";
         return 0;
@@ -348,6 +421,9 @@ int layer_forward(struct layer *obj, bool training) {
 	case LAYER_TANH:
 		activation_tanh_forward(obj->obj);
 		break;
+    case LAYER_QUADRATIC:
+        layer_quadratic_forward(obj->obj);
+        break;
     default:
         LAST_ERROR = "Invalid layer type.";
         return 0;
@@ -388,6 +464,9 @@ int layer_backward(struct layer *obj) {
 	case LAYER_TANH:
 		activation_tanh_backward(obj->obj);
 		break;
+    case LAYER_QUADRATIC:
+        layer_quadratic_backward(obj->obj);
+        break;
     default:
         LAST_ERROR = "Invalid layer type.";
         return 0;
@@ -416,6 +495,9 @@ int layer_free(struct layer *obj) {
             break;
         case LAYER_SOFTMAX:
             activation_softmax_free((struct activation_softmax*)(obj->obj));
+            break;
+        case LAYER_QUADRATIC:
+            layer_quadratic_free((struct layer_quadratic*)(obj->obj));
             break;
         case LAYER_SIGMOID:
         case LAYER_RELU:
@@ -465,6 +547,22 @@ int layer_free(struct layer *obj) {
                 return 0;
             }
             break;
+        case LAYER_QUADRATIC:
+            switch (obj->opt.type) {
+            case OPTIMIZER_SGD:
+                optimizer_sgd_quadratic_free((struct optimizer_sgd_quadratic*)(obj->opt.obj));
+                break;
+            case OPTIMIZER_ADAM:
+                optimizer_adam_quadratic_free((struct optimizer_adam_quadratic*)(obj->opt.obj));
+                break;
+	    	case OPTIMIZER_RMSPROP:
+				optimizer_rmsprop_quadratic_free((struct optimizer_rmsprop_quadratic*)(obj->opt.obj));
+				break;
+            default:
+                LAST_ERROR = "Invalid optimizer type.";
+                return 0;
+            }
+            break;
         default:
             LAST_ERROR = "Layer is untrainable; cannot free optimizer.";
             return 0;
@@ -507,6 +605,22 @@ int layer_update(struct layer* obj) {
                 break;
 	    	case OPTIMIZER_RMSPROP:
 				optimizer_rmsprop_conv2d_update(obj->opt.obj, obj->opt.iter);
+				break;
+            default:
+                LAST_ERROR = "Invalid optimizer type.";
+                return 0;
+            }
+            break;
+        case LAYER_QUADRATIC:
+            switch (obj->opt.type) {
+            case OPTIMIZER_SGD:
+                optimizer_sgd_quadratic_update(obj->opt.obj, obj->opt.iter);
+                break;
+            case OPTIMIZER_ADAM:
+                optimizer_adam_quadratic_update(obj->opt.obj, obj->opt.iter);
+                break;
+	    	case OPTIMIZER_RMSPROP:
+				optimizer_rmsprop_quadratic_update(obj->opt.obj, obj->opt.iter);
 				break;
             default:
                 LAST_ERROR = "Invalid optimizer type.";

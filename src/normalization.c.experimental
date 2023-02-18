@@ -1,0 +1,158 @@
+// normalization.c
+// Batch normalization.
+
+#include <math.h>
+
+#include "normalization.h"
+#include "matrix.h"
+#include "declspec.h"
+
+// Initialize an empty layer object.
+int layer_normalization_init(struct layer_normalization *obj, int input_size,
+                         double gamma, double momentum,
+                         struct matrix *input, struct matrix *output,
+                         struct matrix *d_outputs, struct matrix *d_inputs) {
+    // Set the input and output size.
+    obj->input_size = input_size;
+    obj->output_size = input_size;
+
+    // Set the matrices and assert that their sizes are correct.
+    obj->input = input;
+    if (!(input->n_cols == input_size)) {
+        // Invalid input size.
+        LAST_ERROR = "Invalid input matrix size.";
+        return 0;
+    }
+
+    obj->output = output;
+    if (!(output->n_cols == input_size)) {
+        // Invalid output size.
+        LAST_ERROR = "Invalid output matrix size.";
+        return 0;
+    }
+
+    obj->d_outputs = d_outputs;
+    if (!(d_outputs->n_cols == input_size)) {
+        // Invalid output gradient size.
+        LAST_ERROR = "Invalid d_outputs matrix size.";
+        return 0;
+    }
+
+    obj->d_inputs = d_inputs;
+    if (!(d_inputs->n_cols == input_size)) {
+        // Invalid input gradient size.
+        LAST_ERROR = "Invalid d_inputs matrix size.";
+        return 0;
+    }
+
+    if (!((input->n_rows == output->n_rows) && (input->n_rows == d_outputs->n_rows) && (input->n_rows == d_inputs->n_rows))) {
+        // Invalid output gradient size.
+        LAST_ERROR = "Input, output, d_inputs, and d_outputs matrices must have the same number of rows/samples.";
+        return 0;
+    }
+
+    obj->epsilon = epsilon;
+    obj->momentum = momentum;
+
+    // Allocate the running mean and running variance.
+    if (!matrix_init(&obj->running_mean, 1, input_size)) {
+        return 0;
+    }
+    if (!matrix_init(&obj->running_variance, 1, input_size)) {
+        return 0;
+    }
+    if (!matrix_init(&obj->mean, 1, input_size)) {
+        return 0;
+    }
+    if (!matrix_init(&obj->variance, 1, input_size)) {
+        return 0;
+    }
+
+    // Initialize the running mean and running variance.
+    for (int i = 0; i < obj->input_size; i++) {
+        obj->running_mean.buffer[i] = 0.0;
+        obj->running_variance.buffer[i] = 0.0;
+    }
+
+    return 1;
+}
+
+
+// Free the layer's matrices.
+void layer_normalization_free(struct layer_normalization *obj) {
+    matrix_free(&obj->running_mean);
+    matrix_free(&obj->running_variance);
+    matrix_free(&obj->mean);
+    matrix_free(&obj->variance);
+}
+
+// Set the layer hyper parameters.
+void layer_normalization_set_values(struct layer_normalization *obj, double epsilon, double momentum) {
+    obj->epsilon = epsilon;
+    obj->momentum = momentum;
+}
+
+// Perform a forward pass on the layer.
+void layer_normalization_forward(struct layer_normalization *obj) {
+    double mean, variance;
+    for (int i = 0; i < obj->input_size; i++) {
+        // Calculate the mean.
+        mean = 0.0;
+        for (int j = 0; j < obj->input->n_rows; j++) {
+            mean += obj->input->buffer[j * obj->input_size + i];
+        }
+        mean /= (double)obj->input->n_rows;
+        obj->mean.buffer[i] = mean;
+        
+        // Calculate the variance.
+        variance = 0.0;
+        for (int j = 0; j < obj->input->n_rows; j++) {
+            variance += pow(obj->input->buffer[j * obj->input_size + i] - mean, 2.0);
+        }
+        variance /= (double)obj->input->n_rows;
+        obj->variance.buffer[i] = variance;
+
+        // Apply the normalization.
+        for (int j = 0; j < obj->input->n_rows; j++) {
+            obj->output->buffer[j * obj->input_size + i] = obj->gamma * (obj->input->buffer[j * obj->input_size + i] - mean) / sqrt(variance + obj->epsilon) + obj->beta;
+        }
+
+        obj->running_mean.buffer[i] = obj->momentum * obj->running_mean.buffer[i] + (1.0 - obj->momentum) * mean;
+        obj->running_variance.buffer[i] = obj->momentum * obj->running_variance.buffer[i] + (1.0 - obj->momentum) * variance;
+    }
+}
+
+// Perform a forward pass on the layer.
+void layer_normalization_forward_predict(struct layer_normalization *obj) {
+    for (int i = 0; i < obj->input_size; i++) {
+        for (int j = 0; j < obj->input->n_rows; j++) {
+            obj->output->buffer[j * obj->input_size + i] = obj->gamma * (obj->input->buffer[j * obj->input_size + i] - obj->running_mean.buffer[i]) / sqrt(obj->running_variance.buffer[i] + obj->epsilon) + obj->beta;
+        }
+    }
+}
+
+
+// Perform a backward pass on the layer.
+void layer_normalization_backward(struct layer_normalization *obj) {
+    // Calculate d_inputs.
+    double t, sum_d_outputs, sum_adjusted_d_outputs;
+    for (int i = 0; i < obj->input_size; i++) {
+        t = 1.0 / sqrt(obj->variance.buffer[i] + obj->epsilon);
+        sum_d_outputs = 0.0;
+        sum_adjusted_d_outputs = 0.0;
+
+        // sum_d_outputs = sum(d_outputs over axis 0).
+        // sum_adjusted_d_outputs = sum(d_outputs * (x - mean) over axis 0).
+        for (int j = 0; j < obj->input->n_rows; j++) {
+            sum_d_outputs += obj->d_outputs->buffer[j * obj->input_size + i];
+            sum_adjusted_d_outputs += obj->d_outputs->buffer[j * obj->input_size + i] * (obj->input->buffer[j * obj->input_size + i] - obj->mean.buffer[i]);
+        }
+
+        for (int j = 0; j < obj->input->n_rows; j++) {
+            double m = (double)obj->input->n_rows;
+            
+            // d_input = (gamma * t / m) * (m * d_output - sum_d_outputs - t ^ 2 * (x - mean) * sum_adjusted_d_outputs).
+            obj->d_inputs->buffer[j * obj->input_size + i] = (obj->gamma * t / m) * (m * obj->d_outputs->buffer[j * obj->input_size + i] - sum_d_outputs - t * t * (obj->input->buffer[j * obj->input_size + i] - obj->mean.buffer[i]) * sum_adjusted_d_outputs);
+        }
+    }
+}

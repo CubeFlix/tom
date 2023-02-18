@@ -68,7 +68,10 @@ enum layer_type {
     LAYER_SOFTMAX,
 	
 	// Tanh layer.
-	LAYER_TANH
+	LAYER_TANH,
+    
+    // Quadratic layer.
+    LAYER_QUADRATIC
 };
 
 // The generic layer object. 

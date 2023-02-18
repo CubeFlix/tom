@@ -14,6 +14,7 @@
 #include "maxpool2d.h"
 #include "padding2d.h"
 #include "leaky_relu.h"
+#include "quadratic.h"
 
 // Serialize a matrix's data.
 int serialize_matrix(struct matrix* obj, FILE* fp) {
@@ -88,6 +89,17 @@ int serialize_layer_params(struct layer* obj, FILE* fp) {
 		if (fwrite(&((struct activation_leaky_relu*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
 			LAST_ERROR = "Failed to write file.";
 			return 0;
+		}
+		break;
+	case LAYER_QUADRATIC:
+		if (!serialize_matrix(&((struct layer_quadratic*)(obj->obj))->weights, fp)) {
+			return 0;	
+		}
+		if (!serialize_matrix(&((struct layer_quadratic*)(obj->obj))->biases, fp)) {
+			return 0;
+		}
+		if (!serialize_matrix(&((struct layer_quadratic*)(obj->obj))->quad, fp)) {
+			return 0;	
 		}
 		break;
 	default:
@@ -182,6 +194,18 @@ int deserialize_layer_params(struct layer* obj, FILE* fp) {
 		// Leaky RELU layer.
 		if (fread(&((struct activation_leaky_relu*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
 			LAST_ERROR = "Failed to read file.";
+			return 0;
+		}
+		break;
+	case LAYER_QUADRATIC:
+		// Quadratic layer.
+		if (!deserialize_matrix(&((struct layer_quadratic*)(obj->obj))->weights, fp)) {
+			return 0;
+		}
+		if (!deserialize_matrix(&((struct layer_quadratic*)(obj->obj))->biases, fp)) {
+			return 0;
+		}
+		if (!deserialize_matrix(&((struct layer_quadratic*)(obj->obj))->quad, fp)) {
 			return 0;
 		}
 		break;

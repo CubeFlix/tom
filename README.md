@@ -1,5 +1,9 @@
 # tom, a neural network library
 
+# EXPERIMENTAL BUILD (quadratic layers)
+
+> this experimental build includes quadratic layers (`layer_quadratic`).
+
 `tom` is a CPU-based neural network library written in C. It supports dense and convolutional layers, along with a multitude of different activations, optimizers, and loss functions. Internally, `tom` uses shared matrices in memory to process large amounts of double-precision floating-point data, by sharing data between layers in models. Models can also be serialized and loaded from disk. `tom` has been tested with the Iris (Fisher, 1936) and MNIST (Deng, L., 2012) datasets. See `tests/iris_test.c` and `tests/mnist_test.c` for more information.
 
 Currently, `tom` supports the following layer types:

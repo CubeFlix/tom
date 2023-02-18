@@ -34,6 +34,10 @@ extern "C" {
 #include "rmsprop_conv2d.h"
 #include "sgd_conv2d.h"
 #include "adam_conv2d.h"
+#include "quadratic.h"
+#include "sgd_quadratic.h"
+#include "adam_quadratic.h"
+#include "rmsprop_quadratic.h"
 
 #ifdef __cplusplus
 }
