@@ -25,6 +25,14 @@ int optimizer_sgd_conv2d_init(struct optimizer_sgd_conv2d *obj,
         if (!matrix_init(&obj->bias_m, 1, layer->biases.n_cols)) {
             return 0;
         }
+
+        // Zero the matrices.
+        for (int i = 0; i < obj->weight_m.size; i++) {
+            obj->weight_m.buffer[i] = 0.0;
+        }
+        for (int i = 0; i < obj->bias_m.size; i++) {
+            obj->bias_m.buffer[i] = 0.0;
+        }
     }
 
     return 1;

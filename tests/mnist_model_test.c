@@ -5,20 +5,11 @@
 #include <string.h>
 #include <float.h>
 
-#include "headers.h"
-
-// error handling macro
-#define QUIT_ON_ERROR(x) { \
-    int ret = (x); \
-    if (!ret) { \
-        printf("%s\n", LAST_ERROR); \
-        exit(1); \
-    } \
-}
+#include "tom.h"
 
 static void shuffle(void *X, void *Y, size_t n, size_t size_x, size_t size_y) {
-    char tmp_x[size_x];
-    char tmp_y[size_y];
+    char *tmp_x = malloc(size_x);
+    char *tmp_y = malloc(size_y);
     size_t stride_x = size_x * sizeof(char), stride_y = size_y * sizeof(char);
 
     if (n > 1) {
@@ -27,15 +18,18 @@ static void shuffle(void *X, void *Y, size_t n, size_t size_x, size_t size_y) {
             size_t rnd = (size_t) rand();
             size_t j = i + rnd / (RAND_MAX / (n - i) + 1);
 
-            memcpy(tmp_x, X + j * stride_x, size_x);
-            memcpy(X + j * stride_x, X + i * stride_x, size_x);
-            memcpy(X + i * stride_x, tmp_x, size_x);
+            memcpy(tmp_x, (char *)X + j * stride_x, size_x);
+            memcpy((char *)X + j * stride_x, (char *)X + i * stride_x, size_x);
+            memcpy((char *)X + i * stride_x, tmp_x, size_x);
 
-            memcpy(tmp_y, Y + j * stride_y, size_y);
-            memcpy(Y + j * stride_y, Y + i * stride_y, size_y);
-            memcpy(Y + i * stride_y, tmp_y, size_y);
+            memcpy(tmp_y, (char *)Y + j * stride_y, size_y);
+            memcpy((char *)Y + j * stride_y, (char *)Y + i * stride_y, size_y);
+            memcpy((char *)Y + i * stride_y, tmp_y, size_y);
         }
     }
+
+    free(tmp_x);
+    free(tmp_y);
 }
 
 void load_dataset(struct matrix *X, struct matrix *Y) {
@@ -130,6 +124,7 @@ int main() {
     layer_dense_init_values(l1->obj, WI_HE_NORMAL, BI_ZEROS);
     layer_dense_init_values(l2->obj, WI_HE_NORMAL, BI_ZEROS);
     QUIT_ON_ERROR(model_init_optimizers(m, OPTIMIZER_ADAM, 0.001, 0.9, 0.999, 0.0, 1.0e-7));
+    // QUIT_ON_ERROR(model_init_optimizers(m, OPTIMIZER_SGD, 0.001, 0.0, 0.0, 0));
 
     // Train the network.
     printf("training...\n");
