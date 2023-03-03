@@ -25,6 +25,14 @@ int optimizer_sgd_bn_init(struct optimizer_sgd_bn *obj,
         if (!matrix_init(&obj->beta_m, 1, layer->beta.n_cols)) {
             return 0;
         }
+
+        // Zero the matrices.
+        for (int i = 0; i < obj->gamma_m.size; i++) {
+            obj->gamma_m.buffer[i] = 0.0;
+        }
+        for (int i = 0; i < obj->beta_m.size; i++) {
+            obj->beta_m.buffer[i] = 0.0;
+        }
     }
 
     return 1;

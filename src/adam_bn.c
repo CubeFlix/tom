@@ -34,6 +34,16 @@ int optimizer_adam_bn_init(struct optimizer_adam_bn *obj,
         return 0;
     }
 
+    // Zero the matrices.
+    for (int i = 0; i < obj->gamma_m.size; i++) {
+        obj->gamma_m.buffer[i] = 0.0;
+        obj->gamma_c.buffer[i] = 0.0;
+    }
+    for (int i = 0; i < obj->beta_m.size; i++) {
+        obj->beta_m.buffer[i] = 0.0;
+        obj->beta_c.buffer[i] = 0.0;
+    }
+
     return 1;
 }
 

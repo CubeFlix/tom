@@ -25,6 +25,14 @@ int optimizer_rmsprop_bn_init(struct optimizer_rmsprop_bn *obj, struct layer_nor
 		return 0;
 	}
 
+	// Zero the matrices.
+    for (int i = 0; i < obj->gamma_c.size; i++) {
+        obj->gamma_c.buffer[i] = 0.0;
+    }
+    for (int i = 0; i < obj->beta_c.size; i++) {
+        obj->beta_c.buffer[i] = 0.0;
+    }
+
 	return 1;
 }
 
