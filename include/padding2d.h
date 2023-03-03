@@ -41,14 +41,6 @@ struct layer_padding2d {
     // on the first forward pass.
     int *output_cache;
 
-    // Padding gradient cache. For each input value, the value is 1.0 
-    // plus 1.0 multiplied by the number of times said input value appears in
-    // the output padding. For example, if a particular input value is repeated
-    // twice in the output padding, its corresponding gradient cache will be 
-    // 3.0. For zero-padding, all values will be 1.0. The cache only needs
-    // to be calculated once, on the first forward pass.
-    struct matrix grad_cache;
-
     bool has_caches;
     
     // Gradients on the outputs and inputs, respectively.

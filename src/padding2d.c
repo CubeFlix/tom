@@ -76,9 +76,6 @@ int layer_padding2d_init(struct layer_padding2d *obj, int n_channels,
         LAST_ERROR = "Failed to allocate padding cache.";
         return 0;
     }
-    if (!matrix_init(&obj->grad_cache, obj->input_height, obj->input_width)) {
-        return 0;
-    }
 
     obj->has_caches = false;
 
@@ -88,7 +85,6 @@ int layer_padding2d_init(struct layer_padding2d *obj, int n_channels,
 // Free the cache owned by the layer.
 void layer_padding2d_free(struct layer_padding2d *obj) {
     free(obj->output_cache);
-    matrix_free(&obj->grad_cache);
 }
 
 // Recalculate the caches.
@@ -108,7 +104,6 @@ int layer_padding2d_recalculate_caches(struct layer_padding2d *obj) {
             // Set the output cache value at (i + padding_y, j + padding_x) to the input
             // index, i * input_width + j.
             obj->output_cache[(i + obj->padding_y) * obj->output_width + (j + obj->padding_x)] = i * obj->input_width + j;
-            obj->grad_cache.buffer[i * obj->input_width + j] = 1.0;
         }
     }
     
@@ -123,13 +118,11 @@ int layer_padding2d_recalculate_caches(struct layer_padding2d *obj) {
                 // Set the output cache value at (j + padding_y, padding_x - 1 - i). The 
                 // corresponding input value should be at (j, i).
                 obj->output_cache[(j + obj->padding_y) * obj->output_width + obj->padding_x - 1 - i] = j * obj->input_width + i;
-                obj->grad_cache.buffer[j * obj->input_width + i] += 1.0;
 
                 // Set the output cache value at (j + padding_y, padding_x + 
                 // input_width + i). The corresponding input value should be at
                 // (j, input_width - 1 - i).
                 obj->output_cache[(j + obj->padding_y) * obj->output_width + obj->padding_x + obj->input_width + i] = j * obj->input_width + obj->input_width - 1 - i;
-                obj->grad_cache.buffer[j * obj->input_width + obj->input_width - 1 - i] += 1.0;
             }
 
             for (int j = 0; j < obj->padding_y; j++) {
@@ -138,22 +131,18 @@ int layer_padding2d_recalculate_caches(struct layer_padding2d *obj) {
                 // Top-left corner. Set the value at (padding_y - 1 - j, 
                 // padding_x - 1 - i) to (j, i).
                 obj->output_cache[(obj->padding_y - 1 - j) * obj->output_width + obj->padding_x - 1 - i] = j * obj->input_width + i;
-                obj->grad_cache.buffer[j * obj->input_width + i] += 1.0;
 
                 // Top-right corner. Set the value at (padding_y - 1 - j, 
                 // padding_x + input_width + i) to (j, input_width - 1 - i).
                 obj->output_cache[(obj->padding_y - 1 - j) * obj->output_width + obj->padding_x + obj->input_width + i] = j * obj->input_width + obj->input_width - 1 - i;
-                obj->grad_cache.buffer[j * obj->input_width + obj->input_width - 1 - i] += 1.0;
 
                 // Bottom-left corner. Set the value at (padding_y + input_height + j, 
                 // padding_x - 1 - i) to (input_height - 1 - j, i).
                 obj->output_cache[(obj->padding_y + obj->input_height + j) * obj->output_width + obj->padding_x - 1 - i] = (obj->input_height - 1 - j) * obj->input_width + i;
-                obj->grad_cache.buffer[(obj->input_height - 1 - j) * obj->input_width + i] += 1.0;
 
                 // Bottom-right corner. Set the value at (padding_y + input_height + j, 
                 // padding_x + input_width + i) to (input_height - 1 - j, input_width - 1 - i).
                 obj->output_cache[(obj->padding_y + obj->input_height + j) * obj->output_width + obj->padding_x + obj->input_width + i] = (obj->input_height - 1 - j) * obj->input_width + obj->input_width - 1 - i;
-                obj->grad_cache.buffer[(obj->input_height - 1 - j) * obj->input_width + obj->input_width - 1 - i] += 1.0;
             }
         }
 
@@ -163,13 +152,11 @@ int layer_padding2d_recalculate_caches(struct layer_padding2d *obj) {
                 // Set the output cache value at (padding_y - 1 - i, j + padding_x). The 
                 // corresponding input value should be at (i, j).
                 obj->output_cache[(obj->padding_y - 1 - i) * obj->output_width + j + obj->padding_x] = i * obj->input_width + j;
-                obj->grad_cache.buffer[i * obj->input_width + j] += 1.0;
 
                 // Set the output cache value at (padding_y + 
                 // input_height + i, j + padding_x). The corresponding input value should be at
                 // (input_height - 1 - i, j).
                 obj->output_cache[(obj->padding_y + obj->input_height + i) * obj->output_width + j + obj->padding_x] = (obj->input_height - 1 - i) * obj->input_width + j;
-                obj->grad_cache.buffer[(obj->input_height - 1 - i) * obj->input_width + j] += 1.0;
             }
         }
         break;
@@ -182,13 +169,11 @@ int layer_padding2d_recalculate_caches(struct layer_padding2d *obj) {
                 // Set the output cache value at (j + padding_y, padding_x - 1 - i). The 
                 // corresponding input value should be at (j, i + 1).
                 obj->output_cache[(j + obj->padding_y) * obj->output_width + obj->padding_x - 1 - i] = j * obj->input_width + i + 1;
-                obj->grad_cache.buffer[j * obj->input_width + i + 1] += 1.0;
 
                 // Set the output cache value at (j + padding_y, padding_x + 
                 // input_width + i). The corresponding input value should be at
                 // (j, input_width - 1 - i - 1).
                 obj->output_cache[(j + obj->padding_y) * obj->output_width + obj->padding_x + obj->input_width + i] = j * obj->input_width + obj->input_width - 2 - i;
-                obj->grad_cache.buffer[j * obj->input_width + obj->input_width - 2 - i] += 1.0;
             }
 
             for (int j = 0; j < obj->padding_y; j++) {
@@ -197,22 +182,18 @@ int layer_padding2d_recalculate_caches(struct layer_padding2d *obj) {
                 // Top-left corner. Set the value at (padding_y - 1 - j, 
                 // padding_x - 1 - i) to (j + 1, i + 1).
                 obj->output_cache[(obj->padding_y - 1 - j) * obj->output_width + obj->padding_x - 1 - i] = (j + 1) * obj->input_width + i + 1;
-                obj->grad_cache.buffer[(j + 1) * obj->input_width + i + 1] += 1.0;
 
                 // Top-right corner. Set the value at (padding_y - 1 - j, 
                 // padding_x + input_width + i) to (j + 1, input_width - 1 - i - 1).
                 obj->output_cache[(obj->padding_y - 1 - j) * obj->output_width + obj->padding_x + obj->input_width + i] = (j + 1) * obj->input_width + obj->input_width - 2 - i;
-                obj->grad_cache.buffer[(j + 1) * obj->input_width + obj->input_width - 2 - i] += 1.0;
 
                 // Bottom-left corner. Set the value at (padding_y + input_height + j, 
                 // padding_x - 1 - i) to (input_height - 1 - j - 1, i + 1).
                 obj->output_cache[(obj->padding_y + obj->input_height + j) * obj->output_width + obj->padding_x - 1 - i] = (obj->input_height - 2 - j) * obj->input_width + i + 1;
-                obj->grad_cache.buffer[(obj->input_height - 2 - j) * obj->input_width + i + 1] += 1.0;
 
                 // Bottom-right corner. Set the value at (padding_y + input_height + j, 
                 // padding_x + input_width + i) to (input_height - 1 - j - 1, input_width - 1 - i - 1).
                 obj->output_cache[(obj->padding_y + obj->input_height + j) * obj->output_width + obj->padding_x + obj->input_width + i] = (obj->input_height - 2 - j) * obj->input_width + obj->input_width - 2 - i;
-                obj->grad_cache.buffer[(obj->input_height - 2 - j) * obj->input_width + obj->input_width - 2 - i] += 1.0;
             }
         }
 
@@ -222,13 +203,11 @@ int layer_padding2d_recalculate_caches(struct layer_padding2d *obj) {
                 // Set the output cache value at (padding_y - 1 - i, j + padding_x). The 
                 // corresponding input value should be at (i + 1, j).
                 obj->output_cache[(obj->padding_y - 1 - i) * obj->output_width + j + obj->padding_x] = (i + 1) * obj->input_width + j;
-                obj->grad_cache.buffer[(i + 1) * obj->input_width + j] += 1.0;
 
                 // Set the output cache value at (padding_y + 
                 // input_height + i, j + padding_x). The corresponding input value should be at
                 // (input_height - 1 - i - 1, j).
                 obj->output_cache[(obj->padding_y + obj->input_height + i) * obj->output_width + j + obj->padding_x] = (obj->input_height - 2 - i) * obj->input_width + j;
-                obj->grad_cache.buffer[(obj->input_height - 2 - i) * obj->input_width + j] += 1.0;
             }
         }
         break;

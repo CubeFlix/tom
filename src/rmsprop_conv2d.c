@@ -26,6 +26,14 @@ int optimizer_rmsprop_conv2d_init(struct optimizer_rmsprop_conv2d *obj, struct l
 		return 0;
 	}
 
+	// Zero the matrices.
+    for (int i = 0; i < obj->weight_c.size; i++) {
+        obj->weight_c.buffer[i] = 0.0;
+    }
+    for (int i = 0; i < obj->bias_c.size; i++) {
+        obj->bias_c.buffer[i] = 0.0;
+    }
+
 	return 1;
 }
 

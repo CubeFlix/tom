@@ -33,6 +33,16 @@ int optimizer_adam_init(struct optimizer_adam *obj, struct layer_dense *layer,
         return 0;
     }
 
+    // Zero the matrices.
+    for (int i = 0; i < obj->weight_m.size; i++) {
+        obj->weight_m.buffer[i] = 0.0;
+        obj->weight_c.buffer[i] = 0.0;
+    }
+    for (int i = 0; i < obj->bias_m.size; i++) {
+        obj->bias_m.buffer[i] = 0.0;
+        obj->bias_c.buffer[i] = 0.0;
+    }
+
     return 1;
 }
 
@@ -54,7 +64,8 @@ void optimizer_adam_update(struct optimizer_adam *obj, int iter) {
 
     // Store the current corrected momentum and cache values.
     double corrected_m, corrected_c;
-    double bias_correction = (1.0 / (1.0 - pow(obj->beta_1, (double)(iter + 1))));
+    double bias_correction_m = (1.0 / (1.0 - pow(obj->beta_1, (double)(iter + 1))));
+    double bias_correction_c = (1.0 / (1.0 - pow(obj->beta_2, (double)(iter + 1))));
 
     // Update the weights.
     for (int i = 0; i < obj->weight_m.size; i++) {
@@ -65,8 +76,8 @@ void optimizer_adam_update(struct optimizer_adam *obj, int iter) {
         obj->weight_c.buffer[i] = obj->weight_c.buffer[i] * obj->beta_2 + (obj->layer->d_weights).buffer[i] * (obj->layer->d_weights).buffer[i] * (1.0 - obj->beta_2);
 
         // Calculate the corrected momentum and cache.
-        corrected_m = obj->weight_m.buffer[i] * bias_correction;
-        corrected_c = obj->weight_c.buffer[i] * bias_correction;
+        corrected_m = obj->weight_m.buffer[i] * bias_correction_m;
+        corrected_c = obj->weight_c.buffer[i] * bias_correction_c;
 
         // Update the weights.
         obj->layer->weights.buffer[i] += -learning_rate * corrected_m / (sqrt(corrected_c) + obj->epsilon);
@@ -81,8 +92,8 @@ void optimizer_adam_update(struct optimizer_adam *obj, int iter) {
         obj->bias_c.buffer[i] = obj->bias_c.buffer[i] * obj->beta_2 + (obj->layer->d_biases).buffer[i] * (obj->layer->d_biases).buffer[i] * (1.0 - obj->beta_2);
 
         // Calculate the corrected momentum and cache.
-        corrected_m = obj->bias_m.buffer[i] * bias_correction;
-        corrected_c = obj->bias_c.buffer[i] * bias_correction;
+        corrected_m = obj->bias_m.buffer[i] * bias_correction_m;
+        corrected_c = obj->bias_c.buffer[i] * bias_correction_c;
 
         // Update the biases.
         obj->layer->biases.buffer[i] += -learning_rate * corrected_m / (sqrt(corrected_c) + obj->epsilon);
