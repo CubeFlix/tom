@@ -65,9 +65,10 @@ void optimizer_adam_bn_update(struct optimizer_adam_bn *obj, int iter) {
 
     // Store the current corrected momentum and cache values.
     double corrected_m, corrected_c;
-    double bias_correction = (1.0 / (1.0 - pow(obj->beta_1, (double)(iter + 1))));
+    double bias_correction_m = (1.0 / (1.0 - pow(obj->beta_1, (double)(iter + 1))));
+    double bias_correction_c = (1.0 / (1.0 - pow(obj->beta_2, (double)(iter + 1))));
 
-    // Update the gamma.
+    // Update the gammas.
     for (int i = 0; i < obj->gamma_m.size; i++) {
         // Calculate the new momentum.
         obj->gamma_m.buffer[i] = obj->gamma_m.buffer[i] * obj->beta_1 + (obj->layer->d_gamma).buffer[i] * (1.0 - obj->beta_1);
@@ -76,14 +77,14 @@ void optimizer_adam_bn_update(struct optimizer_adam_bn *obj, int iter) {
         obj->gamma_c.buffer[i] = obj->gamma_c.buffer[i] * obj->beta_2 + (obj->layer->d_gamma).buffer[i] * (obj->layer->d_gamma).buffer[i] * (1.0 - obj->beta_2);
 
         // Calculate the corrected momentum and cache.
-        corrected_m = obj->gamma_m.buffer[i] * bias_correction;
-        corrected_c = obj->gamma_c.buffer[i] * bias_correction;
+        corrected_m = obj->gamma_m.buffer[i] * bias_correction_m;
+        corrected_c = obj->gamma_c.buffer[i] * bias_correction_c;
 
-        // Update the gamma.
+        // Update the gammas.
         obj->layer->gamma.buffer[i] += -learning_rate * corrected_m / (sqrt(corrected_c) + obj->epsilon);
     }
 
-    // Update the beta.
+    // Update the betas.
     for (int i = 0; i < obj->beta_m.size; i++) {
         // Calculate the new momentum.
         obj->beta_m.buffer[i] = obj->beta_m.buffer[i] * obj->beta_1 + (obj->layer->d_beta).buffer[i] * (1.0 - obj->beta_1);
@@ -92,10 +93,10 @@ void optimizer_adam_bn_update(struct optimizer_adam_bn *obj, int iter) {
         obj->beta_c.buffer[i] = obj->beta_c.buffer[i] * obj->beta_2 + (obj->layer->d_beta).buffer[i] * (obj->layer->d_beta).buffer[i] * (1.0 - obj->beta_2);
 
         // Calculate the corrected momentum and cache.
-        corrected_m = obj->beta_m.buffer[i] * bias_correction;
-        corrected_c = obj->beta_c.buffer[i] * bias_correction;
+        corrected_m = obj->beta_m.buffer[i] * bias_correction_m;
+        corrected_c = obj->beta_c.buffer[i] * bias_correction_c;
 
-        // Update the beta.
+        // Update the betas.
         obj->layer->beta.buffer[i] += -learning_rate * corrected_m / (sqrt(corrected_c) + obj->epsilon);
     }
 }
