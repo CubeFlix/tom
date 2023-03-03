@@ -1,9 +1,5 @@
 # tom, a neural network library
 
-# FEATURE BUILD (batch normalization)
-
-> this feature build includes batch normalization layers (`layer_normalization`)
-
 `tom` is a CPU-based neural network library written in C. It supports dense and convolutional layers, along with a multitude of different activations, optimizers, and loss functions. Internally, `tom` uses shared matrices in memory to process large amounts of double-precision floating-point data, by sharing data between layers in models. Models can also be serialized and loaded from disk. `tom` has been tested with the Iris (Fisher, 1936) and MNIST (Deng, L., 2012) datasets. See `tests/iris_test.c` and `tests/mnist_test.c` for more information.
 
 Currently, `tom` supports the following layer types:
@@ -17,6 +13,7 @@ Currently, `tom` supports the following layer types:
 - Softmax activation layers ([`layer_softmax`](documentation/layers.md#activation_softmax))
 - Sigmoid activation layers ([`layer_sigmoid`](documentation/layers.md#activation_sigmoid))
 - Hyperbolic tangent (tanh) activation layers ([`layer_tanh`](documentation/layers.md#activation_tanh))
+- Batch normalization layers ([`layer_normalization`](documentation/layers.md#layer_normalization))
 
 `tom` also supports the following optimizers:
 

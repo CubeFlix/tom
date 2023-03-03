@@ -570,3 +570,60 @@ Perform a forward pass on the tanh layer.
 
 Perform a backward pass on the tanh layer.
 
+## `layer_normalization`
+
+The batch normalization layer, with running mean and variance, along with affine transformation (Ioffe & Szegedy, 2015).
+
+```
+struct layer_normalization {
+    // The input and output dimensions.
+    int input_size, output_size;
+    
+    // The hyperparameter values for the normalization layer.
+    double epsilon, momentum;
+
+    // Gamma and beta, the parameters to be learned.
+    struct matrix gamma, beta;
+
+    // The running mean and running variance.
+    struct matrix running_mean, running_variance;
+    struct matrix mean, variance;
+
+    // The input and output matrices.
+    struct matrix *input, *output;
+    
+    // Gradients on the outputs and inputs, respectively.
+    struct matrix *d_outputs, *d_inputs;
+
+    // Gradients on gamma and beta.
+    struct matrix d_gamma, d_beta;
+};
+```
+
+### `int layer_normalization_init(struct layer_normalization *obj, int input_size, double epsilon, double momentum, struct matrix *input, struct matrix *output, struct matrix *d_outputs, struct matrix *d_inputs)`
+
+Initialize an empty batch normalization layer object. Returns `1` if successful, otherwise it returns `0`.
+
+### `void layer_normalization_free(struct layer_normalization *obj)`
+
+Free the matrices owned by the batch normalization layer. 
+
+### `int layer_normalization_init_values(struct layer_normalization *obj, enum weight_initializer gamma_type, enum bias_initializer beta_type)`
+
+Initialize gamma and beta. Returns `1` if successful, otherwise it returns `0`.
+
+### `void layer_normalization_set_values(struct layer_normalization *obj, double epsilon, double momentum)`
+
+Set the layer's hyper parameters.
+
+### `void layer_normalization_forward(struct layer_normalization *obj)`
+
+Perform a forward pass on the layer.
+
+### `void layer_normalization_forward_predict(struct layer_normalization *obj)`
+
+Perform a forward pass on the layer, in prediction mode.
+
+### `void layer_normalization_backward(struct layer_normalization *obj)`
+
+Perform a backward pass on the layer.

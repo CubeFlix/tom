@@ -13,6 +13,7 @@ Currently, `tom` supports the following layer types:
 - Softmax activation layers ([`layer_softmax`](layers.md#activation_softmax))
 - Sigmoid activation layers ([`layer_sigmoid`](layers.md#activation_sigmoid))
 - Hyperbolic tangent (tanh) activation layers ([`layer_tanh`](layers.md#activation_tanh))
+- Batch normalization layers ([`layer_normalization`](layers.md#layer_normalization))
 
 `tom` also supports the following optimizers:
 
