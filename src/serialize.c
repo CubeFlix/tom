@@ -14,6 +14,7 @@
 #include "maxpool2d.h"
 #include "padding2d.h"
 #include "leaky_relu.h"
+#include "batch_normalization.h"
 
 // Serialize a matrix's data.
 int serialize_matrix(struct matrix* obj, FILE* fp) {
@@ -87,6 +88,30 @@ int serialize_layer_params(struct layer* obj, FILE* fp) {
 	case LAYER_LEAKY_RELU:
 		if (fwrite(&((struct activation_leaky_relu*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
 			LAST_ERROR = "Failed to write file.";
+			return 0;
+		}
+		break;
+	case LAYER_NORMALIZATION:
+		if (fwrite(&((struct layer_normalization*)(obj->obj))->epsilon, sizeof(double), 1, fp) != 1) {
+			LAST_ERROR = "Failed to write file.";
+			return 0;
+		}
+		if (fwrite(&((struct layer_normalization*)(obj->obj))->momentum, sizeof(double), 1, fp) != 1) {
+			LAST_ERROR = "Failed to write file.";
+			return 0;
+		}
+
+		// Save gamma and beta, along with the running mean and variance.
+		if (!serialize_matrix(&((struct layer_normalization*)(obj->obj))->gamma, fp)) {
+			return 0;	
+		}
+		if (!serialize_matrix(&((struct layer_normalization*)(obj->obj))->beta, fp)) {
+			return 0;
+		}
+		if (!serialize_matrix(&((struct layer_normalization*)(obj->obj))->running_mean, fp)) {
+			return 0;	
+		}
+		if (!serialize_matrix(&((struct layer_normalization*)(obj->obj))->running_variance, fp)) {
 			return 0;
 		}
 		break;
@@ -182,6 +207,29 @@ int deserialize_layer_params(struct layer* obj, FILE* fp) {
 		// Leaky RELU layer.
 		if (fread(&((struct activation_leaky_relu*)(obj->obj))->rate, sizeof(double), 1, fp) != 1) {
 			LAST_ERROR = "Failed to read file.";
+			return 0;
+		}
+		break;
+	case LAYER_NORMALIZATION:
+		// Batch normalization layer.
+		if (fread(&((struct layer_normalization*)(obj->obj))->epsilon, sizeof(double), 1, fp) != 1) {
+			LAST_ERROR = "Failed to read file.";
+			return 0;
+		}
+		if (fread(&((struct layer_normalization*)(obj->obj))->momentum, sizeof(double), 1, fp) != 1) {
+			LAST_ERROR = "Failed to read file.";
+			return 0;
+		}
+		if (!deserialize_matrix(&((struct layer_normalization*)(obj->obj))->gamma, fp)) {
+			return 0;
+		}
+		if (!deserialize_matrix(&((struct layer_normalization*)(obj->obj))->beta, fp)) {
+			return 0;
+		}
+		if (!deserialize_matrix(&((struct layer_normalization*)(obj->obj))->running_mean, fp)) {
+			return 0;
+		}
+		if (!deserialize_matrix(&((struct layer_normalization*)(obj->obj))->running_variance, fp)) {
 			return 0;
 		}
 		break;

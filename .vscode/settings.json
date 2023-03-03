@@ -6,6 +6,7 @@
         "xstring": "c",
         "xutility": "c",
         "binary_crossentropy.h": "c",
-        "sgd_conv2d.h": "c"
+        "sgd_conv2d.h": "c",
+        "cmath": "c"
     }
 }
