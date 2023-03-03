@@ -28,6 +28,17 @@ int optimizer_sgd_quadratic_init(struct optimizer_sgd_quadratic *obj,
         if (!matrix_init(&obj->quad_m, layer->weights.n_rows, layer->weights.n_cols)) {
             return 0;
         }
+
+        // Zero the matrices.
+        for (int i = 0; i < obj->weight_m.size; i++) {
+            obj->weight_m.buffer[i] = 0.0;
+        }
+        for (int i = 0; i < obj->bias_m.size; i++) {
+            obj->bias_m.buffer[i] = 0.0;
+        }
+        for (int i = 0; i < obj->quad_m.size; i++) {
+            obj->quad_m.buffer[i] = 0.0;
+        }
     }
 
     return 1;

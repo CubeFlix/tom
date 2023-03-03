@@ -29,6 +29,17 @@ int optimizer_rmsprop_quadratic_init(struct optimizer_rmsprop_quadratic *obj, st
 		return 0;
 	}
 
+	// Zero the matrices.
+    for (int i = 0; i < obj->weight_c.size; i++) {
+        obj->weight_c.buffer[i] = 0.0;
+    }
+    for (int i = 0; i < obj->bias_c.size; i++) {
+        obj->bias_c.buffer[i] = 0.0;
+    }
+	for (int i = 0; i < obj->quad_c.size; i++) {
+        obj->quad_c.buffer[i] = 0.0;
+    }
+
 	return 1;
 }
 
